@@ -1,7 +1,11 @@
 // ============================================================================
 // survey-form.js — Multi-step "New Crop Survey" wizard.
-// Steps: Location -> Farm -> Crop Condition -> Sampling -> Harvest -> Weather
-//        -> Farmer Interview -> Photos -> Review -> Submit
+// Rebuilt to match the official Crop Tour Questionnaire (QN.xlsx) column
+// structure exactly. Steps:
+//   Sample & Location -> Farmer -> Coffee Area -> Additional Bearing ->
+//   Bearing & Production -> Selling 2026-27 -> Stock & Fly Crop Outlook ->
+//   Fly Crop Volumes -> Main Crop Outlook -> Weather & Crop Development ->
+//   Price & Market -> Labor & Inputs -> Photos -> Review -> Submit
 // Autosaves to IndexedDB 'drafts' store on every step change ("Save Draft").
 // ============================================================================
 
@@ -11,25 +15,35 @@ const SurveyForm = (() => {
   let container = null;
   let refData = { provinces: [], islands: [], surveyors: [] };
 
-  const STEPS = ['Location', 'Farm', 'Crop Condition', 'Sampling', 'Harvest', 'Weather', 'Interview', 'Photos', 'Review'];
+  const STEPS = [
+    'Sample & Location', 'Farmer', 'Coffee Area', 'Additional Bearing',
+    'Bearing & Production', 'Selling 2026-27', 'Stock & Fly Crop Outlook',
+    'Fly Crop Volumes', 'Main Crop Outlook', 'Weather & Crop Development',
+    'Price & Market', 'Labor & Inputs', 'Photos', 'Review',
+  ];
 
-  const VARIETIES = {
-    Robusta: ["BP 42", "SA 237", "Robusta Lokal", "Tugu Sari", "BP 358"],
-    Arabica: ["Typica", "Kartika", "Sigararutang", "Ateng Super", "Andungsari 2K", "S795"],
-  };
-  const SHADE = ["None", "Light", "Moderate", "Heavy"];
-  const IRRIGATION = ["None", "Partial", "Full"];
-  const CHERRY_STAGES = ["Flowering", "Green Cherry", "Maturing", "Ripe/Red Cherry", "Harvest Ongoing", "Harvest Complete"];
-  const RAIN_COND = ["Below Normal", "Normal", "Above Normal"];
-  const RAIN_VS_NORMAL = ["Much Lower", "Lower", "Normal", "Higher", "Much Higher"];
-  const TEMP_COND = ["Cooler than normal", "Normal", "Warmer than normal"];
-  const WATER_AVAIL = ["Sufficient", "Limited", "Scarce"];
-  const FLOWER_COND = ["Poor", "Fair", "Good", "Excellent"];
-  const EXPECT_VS_LAST = ["Much Lower", "Lower", "Similar", "Higher", "Much Higher"];
-  const SELLING_INTENTION = ["Sell Immediately", "Hold for Better Price", "Partial Sell/Partial Hold", "Contract Committed"];
-  const LABOR_AVAIL = ["Sufficient", "Tight", "Shortage"];
-  const FERT_USAGE = ["None", "Organic Only", "Chemical Only", "Combined"];
-  const CONCERNS = ["Pest Pressure", "Disease", "Labor Shortage", "Low Farmgate Price", "Fertilizer Cost", "Drought", "Excess Rain", "Aging Trees", "None"];
+  // ---- Option lists taken directly from QN.xlsx column headers/legends ----
+  const FLY_CROP_COMPARE = ['Higher', 'Same', 'Lower'];
+  const MAIN_CROP_COMPARE = ['Early', 'Same', 'Late'];
+  const MAIN_CROP_REASON = ['Rains', 'Flowering', 'Dryness'];
+  const START_MONTH_OPTIONS = ['3 - March', '4 - April', '5 - May'];
+  const PEAK_HARVEST_MONTH_OPTIONS = ['5 - May', '6 - June', '7 - July', '8 - August'];
+  const RAINFALL_OPTIONS = ['BN - Below Normal', 'N - Normal', 'AN - Above Normal', 'Ex - Excessive'];
+  const CROP_DEV_OPTIONS = ['BN - Below Normal', 'N - Normal', 'AN - Above Normal'];
+  const DAMAGE_OPTIONS = [
+    '1 - Blossom', '2 - Fruit set', '3 - Blossom and Fruit set', '4 - Cherry development',
+    '5 - Fruit set and Cherry development', '6 - Blossom and Cherry development',
+    '7 - All 3 stages', '8 - No damage',
+  ];
+  const OPINION_PRICE_OPTIONS = ['Happy', 'Not Happy'];
+  const FUTURE_PRICE_OPTIONS = ['B - Bullish', 'N - Neutral', 'S - Bearish'];
+  const REACTION_OPTIONS = [
+    '1 - Increase grafting', '2 - Increase fertilizer', '3 - Better husbandry (other than fertilizer)',
+    '4 - Expanding area', '5 - Improve drying yard', '6 - Renovate house',
+    '7 - Buying car/motorcycle', '8 - No change',
+  ];
+  const HERBICIDE_TYPE_OPTIONS = ['1 - Glifosat', '2 - Paraquat', '3 - 2,4-D', '4 - Combine', '5 - Others'];
+  const PHOTO_CATEGORIES = ['Farm / Coffee Area', 'Trees / Cherries', 'Farmer Reference', 'Other'];
 
   function blankSurvey() {
     const user = Auth.currentUser();
@@ -39,17 +53,40 @@ const SurveyForm = (() => {
       createdAt: Utils.nowIso(),
       updatedAt: Utils.nowIso(),
       surveyor: user ? user.name : '',
-      cropYear: new Date().getFullYear(),
       surveyDate: new Date().toISOString().slice(0, 10),
-      location: { lat: null, lon: null, altitude: null, accuracyM: null, island: '', province: '', district: '', subdistrict: '', village: '' },
+      cropYear: '2026-27',
       coffeeType: 'Robusta',
-      farm: { farmerName: '', farmerId: '', farmAreaHa: null, productiveAreaHa: null, productiveTrees: null, avgTreeAgeYears: null, variety: '', shadeLevel: '', irrigation: '' },
-      cropCondition: { treeCondition: 3, flowering: 3, fruitSet: 3, cherryLoad: 3, beanDevelopment: 3, pestPressure: 3, diseasePressure: 3, soilMoisture: 3, overallCondition: 3 },
-      harvestInfo: { mainFloweringPeriod: '', secondaryFlowering: '', currentCherryStage: 'Green Cherry', greenCherryPct: 25, yellowCherryPct: 25, redCherryPct: 25, harvestedPct: 25, estHarvestStart: '', estPeakHarvest: '', estHarvestCompletion: '' },
-      cropEstimate: { previousProductionKg: null, currentEstimateKg: null, expectedSecondCropKg: null, expectedYieldPerHaKg: null, expectedYieldPerTreeG: null, changePct: null, outlook: 'Similar' },
-      sampling: { trees: [], avgCherriesPerTree: null, avgGreenBeanEquivG: null, estimatedFarmYieldKg: null },
-      weather: { rainfallCondition: 'Normal', rainfallVsNormal: 'Normal', drySpell: false, temperatureCondition: 'Normal', waterAvailability: 'Sufficient', floweringCondition: 'Good', fruitAbortion: false, droughtStress: false, excessiveRainfall: false, windDamage: false, pestDiseaseObservations: '', agronomistComments: '' },
-      interview: { expectationVsLastYear: 'Similar', harvestTiming: 'On time', farmgatePriceIDR: null, sellingIntention: 'Hold for Better Price', pctAlreadySold: 0, laborAvailability: 'Sufficient', harvestLaborCostIDR: null, fertilizerUsage: 'Combined', fertilizerCostIDR: null, majorConcerns: 'None' },
+      sampleNo: '',
+      location: { lat: null, lon: null, altitude: null, province: '', district: '' },
+      farmer: { name: '', phone: '', note: '', updatedName: '', updatedPhone: '' },
+      coffeeArea: { totalHaMar2025: null, totalHaCurrent: null, additionalExpandingTreesPerHa: null },
+      additionalBearing: { y2025Ha: null, y2025Trees: null, y2026Ha: null, y2026Trees: null },
+      bearingArea: { y2024_25: null, y2025_26: null, y2026_27: null, y2027_28: null },
+      production: { y2024_25: null, y2025_26: null, y2026_27: null, y2027_28: null },
+      selling2026_27: {
+        nov25: null, dec25: null, jan26: null, feb26: null, mar26: null, apr26: null,
+        may26: null, jun26: null, jul26: null, aug26: null, sep26: null, oct26: null,
+        nov26: null, dec26: null, undecided: null,
+      },
+      stock: { actual2026_27Quintal: null, regionPct: null },
+      flyCrop: {
+        compareToLY: '',
+        harvesting: { nov26: null, dec26: null, jan27: null, feb27: null },
+        selling: { nov26: null, dec26: null, jan27: null, feb27: null },
+      },
+      mainCrop: { compareToLY: '', reason: '', startMonth: '', peakHarvestMonth: '' },
+      weatherDev: {
+        rainfallBlossom: '', rainfallFruitSet: '', devBlossom: '', devFruitSet: '',
+        damage: '', rainsAtOpeningBlossom: false,
+      },
+      priceMarket: {
+        avgPriceSold2025_26: null, existingPrice: null, expectedPrice: null,
+        opinionCurrentPrice: '', futurePrice: '', reactionToHigherPrice: '',
+      },
+      laborInputs: {
+        wage2025: null, wage2026: null, herbicideType: '', herbicideLitersPerYear: null,
+        fertilizer: { npk2025: null, npk2026: null, urea2025: null, urea2026: null, tsp2025: null, tsp2026: null },
+      },
       photos: [],
     };
   }
@@ -66,43 +103,6 @@ const SurveyForm = (() => {
     state = existingDraft ? JSON.parse(JSON.stringify(existingDraft)) : blankSurvey();
     stepIndex = 0;
     render();
-  }
-
-  function calcCropEstimate() {
-    const ce = state.cropEstimate;
-    if (ce.previousProductionKg && ce.currentEstimateKg) {
-      ce.changePct = Math.round(((ce.currentEstimateKg / ce.previousProductionKg) - 1) * 1000) / 10;
-    } else {
-      ce.changePct = null;
-    }
-    ce.outlook = Utils.outlookClass(ce.changePct);
-    const pArea = state.farm.productiveAreaHa;
-    const pTrees = state.farm.productiveTrees;
-    ce.expectedYieldPerHaKg = (pArea && ce.currentEstimateKg) ? Math.round((ce.currentEstimateKg / pArea) * 10) / 10 : null;
-    ce.expectedYieldPerTreeG = (pTrees && ce.currentEstimateKg) ? Math.round((ce.currentEstimateKg * 1000 / pTrees) * 10) / 10 : null;
-  }
-
-  function calcSampling() {
-    const trees = state.sampling.trees;
-    if (!trees.length) { state.sampling.avgCherriesPerTree = null; state.sampling.avgGreenBeanEquivG = null; state.sampling.estimatedFarmYieldKg = null; return; }
-    trees.forEach(t => {
-      t.estCherriesPerTree = Math.round((t.productiveBranches || 0) * (t.cherriesPerBranch || 0));
-      t.estGreenBeanEquivG = Math.round((t.estCherriesPerTree * 1.7 / 5.5) * 10) / 10; // ~1.7g/cherry; ~5.5:1 cherry:green-bean by wt
-    });
-    state.sampling.avgCherriesPerTree = Math.round(Utils.mean(trees.map(t => t.estCherriesPerTree)) * 10) / 10;
-    state.sampling.avgGreenBeanEquivG = Math.round(Utils.mean(trees.map(t => t.estGreenBeanEquivG)) * 10) / 10;
-    const pTrees = state.farm.productiveTrees || 0;
-    state.sampling.estimatedFarmYieldKg = Math.round((state.sampling.avgGreenBeanEquivG * pTrees / 1000) * 10) / 10;
-  }
-
-  function scoreSelector(name, value, label) {
-    const buttons = [1, 2, 3, 4, 5].map(v => `
-      <button type="button" class="score-btn ${v === value ? 'active' : ''}" data-field="${name}" data-value="${v}"
-        style="${v === value ? `background:${Utils.scoreColor(v)};color:#fff;border-color:${Utils.scoreColor(v)}` : ''}">${v}</button>`).join('');
-    return `<div class="field">
-      <label>${label}</label>
-      <div class="score-row">${buttons}</div>
-    </div>`;
   }
 
   function selectField(name, value, label, options) {
@@ -139,26 +139,15 @@ const SurveyForm = (() => {
     o[keys[keys.length - 1]] = value;
   }
 
-  function stepLocation() {
+  // ===================== STEP 1: Sample & Location =====================
+  function stepSampleLocation() {
     const l = state.location;
     return `
       <div class="step-body">
         ${textField('surveyDate', state.surveyDate, 'Survey Date', 'date')}
         ${selectField('surveyor', state.surveyor, 'Surveyor Name', refData.surveyors)}
-        ${textField('cropYear', state.cropYear, 'Crop Year', 'number')}
-        <div class="field">
-          <label>GPS Coordinates</label>
-          <div class="gps-row">
-            <input type="text" readonly value="${l.lat && l.lon ? `${l.lat}, ${l.lon} (±${l.accuracyM || '?'}m)` : 'Not captured yet'}"/>
-            <button type="button" id="btn-capture-gps" class="btn-secondary">📍 Capture GPS</button>
-          </div>
-        </div>
-        ${selectField('location.island', l.island, 'Island', refData.islands)}
-        ${selectField('location.province', l.province, 'Province', refData.provinces)}
-        ${textField('location.district', l.district, 'District')}
-        ${textField('location.subdistrict', l.subdistrict, 'Sub-district')}
-        ${textField('location.village', l.village, 'Village')}
-        ${textField('location.altitude', l.altitude, 'Altitude (m)', 'number')}
+        ${textField('cropYear', state.cropYear, 'Crop Year (e.g. 2026-27)')}
+        ${textField('sampleNo', state.sampleNo, 'Sample No.')}
         <div class="field">
           <label>Coffee Type</label>
           <div class="toggle-group">
@@ -166,138 +155,180 @@ const SurveyForm = (() => {
             <button type="button" class="chip ${state.coffeeType==='Arabica'?'active':''}" data-field="coffeeType" data-value="Arabica">Arabica</button>
           </div>
         </div>
+        <div class="field">
+          <label>GPS Coordinates</label>
+          <div class="gps-row">
+            <input type="text" readonly value="${l.lat && l.lon ? `${l.lat}, ${l.lon} (±${l.accuracyM || '?'}m)` : 'Not captured yet'}"/>
+            <button type="button" id="btn-capture-gps" class="btn-secondary">📍 Capture GPS</button>
+          </div>
+        </div>
+        ${selectField('location.province', l.province, 'Province', refData.provinces)}
+        ${textField('location.district', l.district, 'District')}
+        ${textField('location.altitude', l.altitude, 'Altitude (m)', 'number')}
       </div>`;
   }
 
-  function stepFarm() {
-    const f = state.farm;
+  // ===================== STEP 2: Farmer =====================
+  function stepFarmer() {
+    const f = state.farmer;
     return `<div class="step-body">
-      ${textField('farm.farmerName', f.farmerName, 'Farmer Name')}
-      ${textField('farm.farmerId', f.farmerId, 'Farmer ID')}
-      ${textField('farm.farmAreaHa', f.farmAreaHa, 'Farm Area (ha)', 'number', 'step="0.01"')}
-      ${textField('farm.productiveAreaHa', f.productiveAreaHa, 'Productive Coffee Area (ha)', 'number', 'step="0.01"')}
-      ${textField('farm.productiveTrees', f.productiveTrees, 'Number of Productive Trees', 'number')}
-      ${textField('farm.avgTreeAgeYears', f.avgTreeAgeYears, 'Average Tree Age (years)', 'number', 'step="0.5"')}
-      ${selectField('farm.variety', f.variety, 'Coffee Variety', VARIETIES[state.coffeeType])}
-      ${selectField('farm.shadeLevel', f.shadeLevel, 'Shade Level', SHADE)}
-      ${selectField('farm.irrigation', f.irrigation, 'Irrigation Availability', IRRIGATION)}
+      ${textField('farmer.name', f.name, 'Farmer Name')}
+      ${textField('farmer.phone', f.phone, 'Ph No.', 'tel')}
+      ${textField('farmer.note', f.note, 'Note')}
+      ${textField('farmer.updatedName', f.updatedName, 'Update Name (if changed)')}
+      ${textField('farmer.updatedPhone', f.updatedPhone, 'Update Phone Number (if changed)', 'tel')}
     </div>`;
   }
 
-  function stepCropCondition() {
-    const c = state.cropCondition;
-    const h = state.harvestInfo;
+  // ===================== STEP 3: Coffee Area =====================
+  function stepCoffeeArea() {
+    const c = state.coffeeArea;
     return `<div class="step-body">
-      <div class="section-label">Condition Scores (1 = Poor, 5 = Excellent)</div>
-      ${scoreSelector('cropCondition.treeCondition', c.treeCondition, 'Tree Condition')}
-      ${scoreSelector('cropCondition.flowering', c.flowering, 'Flowering')}
-      ${scoreSelector('cropCondition.fruitSet', c.fruitSet, 'Fruit Set')}
-      ${scoreSelector('cropCondition.cherryLoad', c.cherryLoad, 'Cherry Load')}
-      ${scoreSelector('cropCondition.beanDevelopment', c.beanDevelopment, 'Bean Development')}
-      ${scoreSelector('cropCondition.pestPressure', c.pestPressure, 'Pest Pressure (5=none)')}
-      ${scoreSelector('cropCondition.diseasePressure', c.diseasePressure, 'Disease Pressure (5=none)')}
-      ${scoreSelector('cropCondition.soilMoisture', c.soilMoisture, 'Soil Moisture')}
-      ${scoreSelector('cropCondition.overallCondition', c.overallCondition, 'Overall Crop Condition')}
-      <div class="section-label">Flowering & Cherry Stage</div>
-      ${textField('harvestInfo.mainFloweringPeriod', h.mainFloweringPeriod, 'Main Flowering Period (e.g. Aug-Sep)')}
-      ${textField('harvestInfo.secondaryFlowering', h.secondaryFlowering, 'Secondary Flowering')}
-      ${selectField('harvestInfo.currentCherryStage', h.currentCherryStage, 'Current Cherry Stage', CHERRY_STAGES)}
-      ${textField('harvestInfo.greenCherryPct', h.greenCherryPct, 'Green Cherry %', 'number')}
-      ${textField('harvestInfo.yellowCherryPct', h.yellowCherryPct, 'Yellow/Maturing Cherry %', 'number')}
-      ${textField('harvestInfo.redCherryPct', h.redCherryPct, 'Red/Ripe Cherry %', 'number')}
-      ${textField('harvestInfo.harvestedPct', h.harvestedPct, 'Already Harvested %', 'number')}
+      ${textField('coffeeArea.totalHaMar2025', c.totalHaMar2025, 'Total Coffee Area (Ha) Mar 2025', 'number', 'step="0.01"')}
+      ${textField('coffeeArea.totalHaCurrent', c.totalHaCurrent, 'Total Coffee Area (Ha) — Current', 'number', 'step="0.01"')}
+      ${textField('coffeeArea.additionalExpandingTreesPerHa', c.additionalExpandingTreesPerHa, 'Any Additional / Expanding Trees per Ha', 'number', 'step="0.01"')}
     </div>`;
   }
 
-  function stepSampling() {
-    const trees = state.sampling.trees;
-    const rows = trees.map((t, i) => `
-      <div class="tree-card" data-tree-idx="${i}">
-        <div class="tree-card-head">
-          <strong>Tree #${t.treeNo}</strong>
-          <button type="button" class="btn-icon btn-remove-tree" data-idx="${i}">✕</button>
-        </div>
-        ${textField(`__tree_${i}.productiveBranches`, t.productiveBranches, 'Productive Branches', 'number')}
-        ${textField(`__tree_${i}.cherriesPerBranch`, t.cherriesPerBranch, 'Cherries per Branch (avg)', 'number', 'step="0.1"')}
-        <div class="calc-row">Est. Cherries/Tree: <b>${t.estCherriesPerTree ?? '—'}</b> | Est. Green Bean Equiv: <b>${t.estGreenBeanEquivG ?? '—'} g</b></div>
-        <div class="field">
-          <label>Tree Photo</label>
-          <input type="file" accept="image/*" capture="environment" data-tree-photo="${i}"/>
-          ${t.photo ? '<span class="photo-tag">📷 Photo attached</span>' : ''}
-        </div>
-      </div>`).join('');
+  // ===================== STEP 4: Additional Bearing =====================
+  function stepAdditionalBearing() {
+    const a = state.additionalBearing;
     return `<div class="step-body">
-      <div class="section-label">Representative Tree Samples</div>
-      <div id="tree-list">${rows || '<p class="muted">No sample trees yet. Add at least 3 for a reliable estimate.</p>'}</div>
-      <button type="button" id="btn-add-tree" class="btn-secondary" style="width:100%;margin-top:8px">+ Add Sample Tree</button>
-      <div class="summary-box">
-        <div>Avg Cherries/Tree: <b>${state.sampling.avgCherriesPerTree ?? '—'}</b></div>
-        <div>Avg Green Bean Equiv: <b>${state.sampling.avgGreenBeanEquivG ?? '—'} g</b></div>
-        <div>Estimated Farm Yield: <b>${Utils.fmtKgOrMt(state.sampling.estimatedFarmYieldKg)}</b></div>
-      </div>
+      <div class="section-label">Additional Bearing (Area &amp; Trees) in 2025</div>
+      ${textField('additionalBearing.y2025Ha', a.y2025Ha, '2025 — Ha', 'number', 'step="0.01"')}
+      ${textField('additionalBearing.y2025Trees', a.y2025Trees, '2025 — Trees', 'number')}
+      <div class="section-label">Additional Bearing (Area &amp; Trees) in 2026</div>
+      ${textField('additionalBearing.y2026Ha', a.y2026Ha, '2026 — Ha', 'number', 'step="0.01"')}
+      ${textField('additionalBearing.y2026Trees', a.y2026Trees, '2026 — Trees', 'number')}
     </div>`;
   }
 
-  function stepHarvest() {
-    const h = state.harvestInfo;
-    const ce = state.cropEstimate;
+  // ===================== STEP 5: Bearing Area & Production =====================
+  function stepBearingProduction() {
+    const b = state.bearingArea;
+    const p = state.production;
     return `<div class="step-body">
-      <div class="section-label">Harvest Timing</div>
-      ${textField('harvestInfo.estHarvestStart', h.estHarvestStart, 'Estimated Harvest Start (e.g. Apr 2025)')}
-      ${textField('harvestInfo.estPeakHarvest', h.estPeakHarvest, 'Estimated Peak Harvest')}
-      ${textField('harvestInfo.estHarvestCompletion', h.estHarvestCompletion, 'Estimated Harvest Completion')}
-      <div class="section-label">Crop Estimate</div>
-      ${textField('cropEstimate.previousProductionKg', ce.previousProductionKg, 'Previous Crop Production (kg)', 'number')}
-      ${textField('cropEstimate.currentEstimateKg', ce.currentEstimateKg, 'Current Crop Estimate (kg)', 'number')}
-      ${textField('cropEstimate.expectedSecondCropKg', ce.expectedSecondCropKg, 'Expected Second Crop (kg)', 'number')}
-      <div class="calc-box">
-        <div>Yield / ha: <b>${ce.expectedYieldPerHaKg ?? '—'} kg</b></div>
-        <div>Yield / tree: <b>${ce.expectedYieldPerTreeG ?? '—'} g</b></div>
-        <div>Change vs Previous Crop: <b style="color:${Utils.outlookColor(ce.outlook)}">${Utils.fmtPct(ce.changePct)}</b></div>
-        <div>Outlook: <b style="color:${Utils.outlookColor(ce.outlook)}">${ce.outlook}</b></div>
-      </div>
+      <div class="section-label">Bearing Area (ha)</div>
+      ${textField('bearingArea.y2024_25', b.y2024_25, '2024-25', 'number', 'step="0.01"')}
+      ${textField('bearingArea.y2025_26', b.y2025_26, '2025-26', 'number', 'step="0.01"')}
+      ${textField('bearingArea.y2026_27', b.y2026_27, '2026-27', 'number', 'step="0.01"')}
+      ${textField('bearingArea.y2027_28', b.y2027_28, '2027-28', 'number', 'step="0.01"')}
+      <div class="section-label">Production (Quintals)</div>
+      ${textField('production.y2024_25', p.y2024_25, '2024-25', 'number', 'step="0.01"')}
+      ${textField('production.y2025_26', p.y2025_26, '2025-26', 'number', 'step="0.01"')}
+      ${textField('production.y2026_27', p.y2026_27, '2026-27', 'number', 'step="0.01"')}
+      ${textField('production.y2027_28', p.y2027_28, '2027-28', 'number', 'step="0.01"')}
     </div>`;
   }
 
-  function stepWeather() {
-    const w = state.weather;
+  // ===================== STEP 6: Selling of 2026-27 crop (Quintals) =====================
+  function stepSelling() {
+    const s = state.selling2026_27;
+    const months = [
+      ['nov25', 'Nov-25'], ['dec25', 'Dec-25'], ['jan26', 'Jan-26'], ['feb26', 'Feb-26'],
+      ['mar26', 'Mar-26'], ['apr26', 'Apr-26'], ['may26', 'May-26'], ['jun26', 'Jun-26'],
+      ['jul26', 'Jul-26'], ['aug26', 'Aug-26'], ['sep26', 'Sep-26'], ['oct26', 'Oct-26'],
+      ['nov26', 'Nov-26'], ['dec26', 'Dec-26'], ['undecided', 'Undecided'],
+    ];
     return `<div class="step-body">
-      ${selectField('weather.rainfallCondition', w.rainfallCondition, 'Rainfall Condition', RAIN_COND)}
-      ${selectField('weather.rainfallVsNormal', w.rainfallVsNormal, 'Rainfall vs Normal', RAIN_VS_NORMAL)}
-      ${toggleField('weather.drySpell', w.drySpell, 'Dry Spell Observed')}
-      ${selectField('weather.temperatureCondition', w.temperatureCondition, 'Temperature Condition', TEMP_COND)}
-      ${selectField('weather.waterAvailability', w.waterAvailability, 'Water Availability', WATER_AVAIL)}
-      ${selectField('weather.floweringCondition', w.floweringCondition, 'Flowering Condition', FLOWER_COND)}
-      ${toggleField('weather.fruitAbortion', w.fruitAbortion, 'Fruit Abortion Observed')}
-      ${toggleField('weather.droughtStress', w.droughtStress, 'Drought Stress')}
-      ${toggleField('weather.excessiveRainfall', w.excessiveRainfall, 'Excessive Rainfall')}
-      ${toggleField('weather.windDamage', w.windDamage, 'Wind Damage')}
-      ${textField('weather.pestDiseaseObservations', w.pestDiseaseObservations, 'Pest / Disease Observations')}
-      <div class="field">
-        <label>Field Agronomist Comments</label>
-        <textarea data-field="weather.agronomistComments" rows="4">${w.agronomistComments || ''}</textarea>
-      </div>
+      <div class="section-label">Selling of 2026-27 Crop (Quintals) by Month</div>
+      ${months.map(([key, label]) => textField(`selling2026_27.${key}`, s[key], label, 'number', 'step="0.01"')).join('')}
     </div>`;
   }
 
-  function stepInterview() {
-    const i = state.interview;
+  // ===================== STEP 7: Stock & Fly Crop Outlook =====================
+  function stepStockFlyOutlook() {
+    const st = state.stock;
+    const fc = state.flyCrop;
     return `<div class="step-body">
-      ${selectField('interview.expectationVsLastYear', i.expectationVsLastYear, 'Crop Expectation vs Last Year', EXPECT_VS_LAST)}
-      ${textField('interview.harvestTiming', i.harvestTiming, 'Harvest Timing')}
-      ${textField('interview.farmgatePriceIDR', i.farmgatePriceIDR, 'Current Farmgate Price (IDR/kg)', 'number')}
-      ${selectField('interview.sellingIntention', i.sellingIntention, 'Farmer Selling Intention', SELLING_INTENTION)}
-      ${textField('interview.pctAlreadySold', i.pctAlreadySold, '% Already Sold', 'number')}
-      ${selectField('interview.laborAvailability', i.laborAvailability, 'Labor Availability', LABOR_AVAIL)}
-      ${textField('interview.harvestLaborCostIDR', i.harvestLaborCostIDR, 'Harvest Labor Cost (IDR/day)', 'number')}
-      ${selectField('interview.fertilizerUsage', i.fertilizerUsage, 'Fertilizer Usage', FERT_USAGE)}
-      ${textField('interview.fertilizerCostIDR', i.fertilizerCostIDR, 'Fertilizer Cost (IDR/season)', 'number')}
-      ${selectField('interview.majorConcerns', i.majorConcerns, 'Major Production Concerns', CONCERNS)}
+      <div class="section-label">Stock</div>
+      ${textField('stock.actual2026_27Quintal', st.actual2026_27Quintal, 'Actual Stock 2026-27 Coffee at Home (Quintal)', 'number', 'step="0.01"')}
+      ${textField('stock.regionPct', st.regionPct, 'Stock in the Region (%)', 'number', 'step="0.1"')}
+      <div class="section-label">Fly Crop Outlook</div>
+      ${selectField('flyCrop.compareToLY', fc.compareToLY, 'Fly Crop Compared to Last Year', FLY_CROP_COMPARE)}
     </div>`;
   }
 
-  const PHOTO_CATEGORIES = ['Farm overview', 'Coffee trees', 'Cherries', 'Flowering', 'Pest/disease', 'Farmer/farm reference', 'Other'];
+  // ===================== STEP 8: Fly Crop Volumes =====================
+  function stepFlyCropVolumes() {
+    const h = state.flyCrop.harvesting;
+    const s = state.flyCrop.selling;
+    return `<div class="step-body">
+      <div class="section-label">Harvesting Fly Crop of 2027-28 Crop (Quintals)</div>
+      ${textField('flyCrop.harvesting.nov26', h.nov26, 'Nov-26', 'number', 'step="0.01"')}
+      ${textField('flyCrop.harvesting.dec26', h.dec26, 'Dec-26', 'number', 'step="0.01"')}
+      ${textField('flyCrop.harvesting.jan27', h.jan27, 'Jan-27', 'number', 'step="0.01"')}
+      ${textField('flyCrop.harvesting.feb27', h.feb27, 'Feb-27', 'number', 'step="0.01"')}
+      <div class="section-label">Selling Fly Crop of 2027-28 Crop (Quintals)</div>
+      ${textField('flyCrop.selling.nov26', s.nov26, 'Nov-26', 'number', 'step="0.01"')}
+      ${textField('flyCrop.selling.dec26', s.dec26, 'Dec-26', 'number', 'step="0.01"')}
+      ${textField('flyCrop.selling.jan27', s.jan27, 'Jan-27', 'number', 'step="0.01"')}
+      ${textField('flyCrop.selling.feb27', s.feb27, 'Feb-27', 'number', 'step="0.01"')}
+    </div>`;
+  }
 
+  // ===================== STEP 9: Main Crop Outlook =====================
+  function stepMainCrop() {
+    const m = state.mainCrop;
+    return `<div class="step-body">
+      ${selectField('mainCrop.compareToLY', m.compareToLY, 'Main Crop Compared to Last Year', MAIN_CROP_COMPARE)}
+      ${selectField('mainCrop.reason', m.reason, 'Reason', MAIN_CROP_REASON)}
+      ${selectField('mainCrop.startMonth', m.startMonth, 'Main Crop Start Month', START_MONTH_OPTIONS)}
+      ${selectField('mainCrop.peakHarvestMonth', m.peakHarvestMonth, 'Peak Harvest Month', PEAK_HARVEST_MONTH_OPTIONS)}
+    </div>`;
+  }
+
+  // ===================== STEP 10: Weather & Crop Development =====================
+  function stepWeatherDev() {
+    const w = state.weatherDev;
+    return `<div class="step-body">
+      <div class="section-label">Rainfall for 2027-28 Crop Developmental Stages</div>
+      ${selectField('weatherDev.rainfallBlossom', w.rainfallBlossom, 'Blossom', RAINFALL_OPTIONS)}
+      ${selectField('weatherDev.rainfallFruitSet', w.rainfallFruitSet, 'Fruit Set', RAINFALL_OPTIONS)}
+      <div class="section-label">2027-28 Crop Development</div>
+      ${selectField('weatherDev.devBlossom', w.devBlossom, 'Blossom', CROP_DEV_OPTIONS)}
+      ${selectField('weatherDev.devFruitSet', w.devFruitSet, 'Fruit Set', CROP_DEV_OPTIONS)}
+      ${selectField('weatherDev.damage', w.damage, 'Damage', DAMAGE_OPTIONS)}
+      ${toggleField('weatherDev.rainsAtOpeningBlossom', w.rainsAtOpeningBlossom, 'Rains at Opening Blossom')}
+    </div>`;
+  }
+
+  // ===================== STEP 11: Price & Market =====================
+  function stepPriceMarket() {
+    const pm = state.priceMarket;
+    return `<div class="step-body">
+      <div class="section-label">Price of Coffee (IDR/Kg)</div>
+      ${textField('priceMarket.avgPriceSold2025_26', pm.avgPriceSold2025_26, 'Average Price They Sold 2025-26 Coffee', 'number')}
+      ${textField('priceMarket.existingPrice', pm.existingPrice, 'Existing Price', 'number')}
+      ${textField('priceMarket.expectedPrice', pm.expectedPrice, 'Expected Price', 'number')}
+      ${selectField('priceMarket.opinionCurrentPrice', pm.opinionCurrentPrice, 'Opinion for Current Price', OPINION_PRICE_OPTIONS)}
+      ${selectField('priceMarket.futurePrice', pm.futurePrice, 'Future Price', FUTURE_PRICE_OPTIONS)}
+      ${selectField('priceMarket.reactionToHigherPrice', pm.reactionToHigherPrice, 'Reaction to Recent Higher Price', REACTION_OPTIONS)}
+    </div>`;
+  }
+
+  // ===================== STEP 12: Labor & Inputs =====================
+  function stepLaborInputs() {
+    const li = state.laborInputs;
+    const fert = li.fertilizer;
+    return `<div class="step-body">
+      <div class="section-label">Average Labor Wages (IDR/day)</div>
+      ${textField('laborInputs.wage2025', li.wage2025, '2025', 'number')}
+      ${textField('laborInputs.wage2026', li.wage2026, '2026', 'number')}
+      <div class="section-label">Herbicides</div>
+      ${selectField('laborInputs.herbicideType', li.herbicideType, 'Application of Herbicides', HERBICIDE_TYPE_OPTIONS)}
+      ${textField('laborInputs.herbicideLitersPerYear', li.herbicideLitersPerYear, 'Herbicides per Year (liter)', 'number', 'step="0.1"')}
+      <div class="section-label">Application of Fertilizers (Quintal)</div>
+      ${textField('laborInputs.fertilizer.npk2025', fert.npk2025, 'NPK — 2025', 'number', 'step="0.01"')}
+      ${textField('laborInputs.fertilizer.npk2026', fert.npk2026, 'NPK — 2026', 'number', 'step="0.01"')}
+      ${textField('laborInputs.fertilizer.urea2025', fert.urea2025, 'Urea — 2025', 'number', 'step="0.01"')}
+      ${textField('laborInputs.fertilizer.urea2026', fert.urea2026, 'Urea — 2026', 'number', 'step="0.01"')}
+      ${textField('laborInputs.fertilizer.tsp2025', fert.tsp2025, 'TSP — 2025', 'number', 'step="0.01"')}
+      ${textField('laborInputs.fertilizer.tsp2026', fert.tsp2026, 'TSP — 2026', 'number', 'step="0.01"')}
+    </div>`;
+  }
+
+  // ===================== STEP 13: Photos =====================
   function stepPhotos() {
     const photos = state.photos;
     const cards = PHOTO_CATEGORIES.map(cat => {
@@ -312,23 +343,25 @@ const SurveyForm = (() => {
     return `<div class="step-body"><div class="photo-grid">${cards}</div></div>`;
   }
 
+  // ===================== STEP 14: Review =====================
   function stepReview() {
     const s = state;
     return `<div class="step-body review-body">
       <h4>Survey Summary</h4>
       <div class="review-grid">
         <div><b>Survey ID</b><span>${s.id}</span></div>
+        <div><b>Sample No.</b><span>${s.sampleNo || '—'}</span></div>
         <div><b>Date</b><span>${s.surveyDate}</span></div>
         <div><b>Surveyor</b><span>${s.surveyor || '—'}</span></div>
         <div><b>Coffee Type</b><span>${s.coffeeType}</span></div>
-        <div><b>Location</b><span>${s.location.village || ''}, ${s.location.subdistrict || ''}, ${s.location.district || ''}, ${s.location.province || '—'}</span></div>
+        <div><b>Province / District</b><span>${s.location.province || '—'} / ${s.location.district || '—'}</span></div>
         <div><b>GPS</b><span>${s.location.lat ? `${s.location.lat}, ${s.location.lon}` : 'Not captured'}</span></div>
-        <div><b>Farmer</b><span>${s.farm.farmerName || '—'} (${s.farm.farmerId || '—'})</span></div>
-        <div><b>Farm Area</b><span>${s.farm.farmAreaHa ?? '—'} ha</span></div>
-        <div><b>Overall Condition</b><span>${s.cropCondition.overallCondition}/5</span></div>
-        <div><b>Harvested</b><span>${s.harvestInfo.harvestedPct ?? 0}%</span></div>
-        <div><b>Crop Change</b><span style="color:${Utils.outlookColor(s.cropEstimate.outlook)}">${Utils.fmtPct(s.cropEstimate.changePct)} (${s.cropEstimate.outlook})</span></div>
-        <div><b>Sample Trees</b><span>${s.sampling.trees.length}</span></div>
+        <div><b>Farmer</b><span>${s.farmer.name || '—'} (${s.farmer.phone || '—'})</span></div>
+        <div><b>Total Coffee Area (Current)</b><span>${s.coffeeArea.totalHaCurrent ?? '—'} ha</span></div>
+        <div><b>Production 2026-27 (Quintals)</b><span>${s.production.y2026_27 ?? '—'}</span></div>
+        <div><b>Fly Crop vs LY</b><span>${s.flyCrop.compareToLY || '—'}</span></div>
+        <div><b>Main Crop vs LY</b><span>${s.mainCrop.compareToLY || '—'}</span></div>
+        <div><b>Existing Price</b><span>${s.priceMarket.existingPrice ?? '—'} IDR/Kg</span></div>
         <div><b>Photos</b><span>${s.photos.length} / ${PHOTO_CATEGORIES.length}</span></div>
       </div>
       <p class="muted">Please review all sections before submitting. You can navigate back to any step to make corrections.</p>
@@ -337,13 +370,18 @@ const SurveyForm = (() => {
 
   function renderStepBody() {
     switch (STEPS[stepIndex]) {
-      case 'Location': return stepLocation();
-      case 'Farm': return stepFarm();
-      case 'Crop Condition': return stepCropCondition();
-      case 'Sampling': return stepSampling();
-      case 'Harvest': return stepHarvest();
-      case 'Weather': return stepWeather();
-      case 'Interview': return stepInterview();
+      case 'Sample & Location': return stepSampleLocation();
+      case 'Farmer': return stepFarmer();
+      case 'Coffee Area': return stepCoffeeArea();
+      case 'Additional Bearing': return stepAdditionalBearing();
+      case 'Bearing & Production': return stepBearingProduction();
+      case 'Selling 2026-27': return stepSelling();
+      case 'Stock & Fly Crop Outlook': return stepStockFlyOutlook();
+      case 'Fly Crop Volumes': return stepFlyCropVolumes();
+      case 'Main Crop Outlook': return stepMainCrop();
+      case 'Weather & Crop Development': return stepWeatherDev();
+      case 'Price & Market': return stepPriceMarket();
+      case 'Labor & Inputs': return stepLaborInputs();
       case 'Photos': return stepPhotos();
       case 'Review': return stepReview();
       default: return '';
@@ -351,8 +389,6 @@ const SurveyForm = (() => {
   }
 
   function render() {
-    calcCropEstimate();
-    calcSampling();
     const pct = Math.round(((stepIndex) / (STEPS.length - 1)) * 100);
     container.innerHTML = `
       <div class="wizard">
@@ -382,22 +418,7 @@ const SurveyForm = (() => {
         const field = e.target.getAttribute('data-field');
         let val = e.target.value;
         if (e.target.type === 'number') val = val === '' ? null : parseFloat(val);
-        if (field.startsWith('__tree_')) {
-          const [, idxStr, prop] = field.match(/__tree_(\d+)\.(.+)/);
-          state.sampling.trees[+idxStr][prop] = val;
-          calcSampling();
-          renderKeepStep();
-          return;
-        }
         setNested(state, field, val);
-        if (field.startsWith('cropEstimate.')) calcCropEstimate();
-        renderKeepStep();
-      });
-    });
-
-    Utils.qsa('.score-btn[data-field]', body).forEach(btn => {
-      btn.addEventListener('click', () => {
-        setNested(state, btn.getAttribute('data-field'), parseInt(btn.getAttribute('data-value')));
         renderKeepStep();
       });
     });
@@ -430,35 +451,6 @@ const SurveyForm = (() => {
         App.toast('GPS capture failed: ' + e.message, 'error');
       }
       renderKeepStep();
-    });
-
-    const addTreeBtn = Utils.qs('#btn-add-tree', body);
-    if (addTreeBtn) addTreeBtn.addEventListener('click', () => {
-      state.sampling.trees.push({ treeNo: state.sampling.trees.length + 1, productiveBranches: null, cherriesPerBranch: null, estCherriesPerTree: null, estGreenBeanEquivG: null, photo: null });
-      calcSampling();
-      renderKeepStep();
-    });
-
-    Utils.qsa('.btn-remove-tree', body).forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.getAttribute('data-idx'));
-        state.sampling.trees.splice(idx, 1);
-        state.sampling.trees.forEach((t, i) => t.treeNo = i + 1);
-        calcSampling();
-        renderKeepStep();
-      });
-    });
-
-    Utils.qsa('input[data-tree-photo]', body).forEach(inp => {
-      inp.addEventListener('change', (e) => {
-        const idx = parseInt(inp.getAttribute('data-tree-photo'));
-        const file = e.target.files[0];
-        if (!file) return;
-        compressAndStore(file).then(dataUrl => {
-          state.sampling.trees[idx].photo = dataUrl;
-          renderKeepStep();
-        });
-      });
     });
 
     Utils.qsa('input[data-photo-cat]', body).forEach(inp => {
