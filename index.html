@@ -15,7 +15,53 @@
 <link rel="stylesheet" href="css/styles.css"/>
 </head>
 <body>
+<div id="site-gate" style="position:fixed;inset:0;background:#4a3323;color:#fff;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:sans-serif;">
+  <div style="background:#fff;color:#2b2117;border-radius:16px;padding:28px 24px;width:90%;max-width:340px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.3);">
+    <div style="font-size:2.5rem;">🔒</div>
+    <h2 style="margin:8px 0;">Coffee Crop Tour</h2>
+    <p style="color:#7a6f63;font-size:0.9rem;">Enter site password to continue</p>
+    <input type="password" id="site-gate-input" placeholder="Password"
+      style="width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1.5px solid #e2dcd3;font-size:1rem;box-sizing:border-box;"/>
+    <button id="site-gate-btn" style="width:100%;margin-top:12px;padding:12px;background:#6f4e37;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">Unlock</button>
+    <div id="site-gate-error" style="color:#d32f2f;font-size:0.85rem;margin-top:8px;min-height:1em;"></div>
+  </div>
+</div>
 <div id="app-shell"></div>
+
+<script>
+// SITE_PASSWORD_GATE: client-side gate (not real security, deters casual visitors only)
+(function() {
+  var SITE_PASSWORD = "CoffeeCrop2025";
+  var SESSION_KEY = "cct_site_gate_ok";
+  var gate = document.getElementById("site-gate");
+  var input = document.getElementById("site-gate-input");
+  var btn = document.getElementById("site-gate-btn");
+  var err = document.getElementById("site-gate-error");
+
+  function unlock() {
+    sessionStorage.setItem(SESSION_KEY, "1");
+    gate.style.display = "none";
+  }
+
+  if (sessionStorage.getItem(SESSION_KEY) === "1") {
+    gate.style.display = "none";
+  } else {
+    gate.style.display = "flex";
+  }
+
+  btn.addEventListener("click", function() {
+    if (input.value === SITE_PASSWORD) {
+      err.textContent = "";
+      unlock();
+    } else {
+      err.textContent = "Incorrect password.";
+    }
+  });
+  input.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") btn.click();
+  });
+})();
+</script>
 
 <script src="js/data-seed.js"></script>
 <script src="js/utils.js"></script>
