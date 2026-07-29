@@ -685,8 +685,15 @@ const App = (() => {
 
   function moreMenuHtml() {
     const secondary = ROUTES.filter(r => !['#/home','#/surveys','#/new-survey','#/map'].includes(r.path));
-    return `<div class="card"><div class="card-title">More</div>
+    const user = Auth.currentUser();
+    return `<div class="card">
+        <div class="card-title">Signed in as</div>
+        <div class="kv-row"><span class="kv-key">Name</span><span class="kv-val">${user ? user.name : '—'}</span></div>
+        <div class="kv-row"><span class="kv-key">Role</span><span class="kv-val">${user ? user.role : '—'}</span></div>
+      </div>
+      <div class="card"><div class="card-title">More</div>
       ${secondary.map(r => `<button class="list-row list-row-btn" data-path="${r.path}"><span class="nav-icon">${r.icon}</span> ${r.label}</button>`).join('')}
+      <button class="list-row list-row-btn" id="btn-switch-user"><span class="nav-icon">🔄</span> Switch User</button>
       <button class="list-row list-row-btn" id="btn-logout"><span class="nav-icon">🚪</span> Logout</button>
     </div>`;
   }
@@ -713,6 +720,8 @@ const App = (() => {
       Utils.qsa('.list-row-btn[data-path]').forEach(btn => btn.addEventListener('click', () => navigate(btn.getAttribute('data-path'))));
       const logoutBtn = document.getElementById('btn-logout');
       if (logoutBtn) logoutBtn.addEventListener('click', () => { Auth.logout(); renderLogin(); });
+      const switchUserBtn = document.getElementById('btn-switch-user');
+      if (switchUserBtn) switchUserBtn.addEventListener('click', () => { Auth.logout(); renderLogin(true); });
       return;
     }
 
@@ -731,14 +740,24 @@ const App = (() => {
     route.view();
   }
 
-  function renderLogin() {
+  function renderLogin(isSwitch) {
     document.getElementById('app-shell').innerHTML = `
       <div class="login-screen">
         <div class="login-card">
           <div class="login-logo">☕</div>
-          <h2>Coffee Crop Tour</h2>
-          <p class="muted">Field survey & crop intelligence platform</p>
-          <input type="text" id="login-username" placeholder="Username" value="surveyor1"/>
+          <h2>${isSwitch ? 'Switch User' : 'Coffee Crop Tour'}</h2>
+          <p class="muted">${isSwitch ? 'Sign in with a different account' : 'Field survey & crop intelligence platform'}</p>
+          <div class="field" style="text-align:left;margin-top:12px">
+            <label>Quick select account</label>
+            <select id="login-quickselect">
+              <option value="">Choose a demo account...</option>
+              <option value="surveyor1">surveyor1 — Field Surveyor</option>
+              <option value="agronomist1">agronomist1 — Agronomist</option>
+              <option value="manager1">manager1 — Manager</option>
+              <option value="admin1">admin1 — Administrator</option>
+            </select>
+          </div>
+          <input type="text" id="login-username" placeholder="Username" value="surveyor1" style="margin-top:10px"/>
           <input type="password" id="login-password" placeholder="Password" value="demo"/>
           <button id="btn-login" class="btn-primary" style="width:100%">Log In</button>
           <p class="muted small" style="margin-top:10px">Demo accounts: surveyor1 / agronomist1 / manager1 / admin1 (password: demo)</p>
@@ -747,6 +766,12 @@ const App = (() => {
       </div>`;
     document.getElementById('btn-login').addEventListener('click', doLogin);
     document.getElementById('login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+    document.getElementById('login-quickselect').addEventListener('change', (e) => {
+      if (e.target.value) {
+        document.getElementById('login-username').value = e.target.value;
+        document.getElementById('login-password').value = 'demo';
+      }
+    });
   }
 
   async function doLogin() {
