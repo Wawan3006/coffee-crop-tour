@@ -139,58 +139,35 @@ const Utils = (() => {
       SurveyDate: s.surveyDate,
       Surveyor: s.surveyor,
       CropYear: s.cropYear,
-      Island: s.location?.island,
-      Province: s.location?.province,
-      District: s.location?.district,
-      SubDistrict: s.location?.subdistrict,
-      Village: s.location?.village,
-      Lat: s.location?.lat,
-      Lon: s.location?.lon,
-      AltitudeM: s.location?.altitude,
-      CoffeeType: s.coffeeType,
-      FarmerName: s.farm?.farmerName,
-      FarmerId: s.farm?.farmerId,
-      FarmAreaHa: s.farm?.farmAreaHa,
-      ProductiveAreaHa: s.farm?.productiveAreaHa,
-      ProductiveTrees: s.farm?.productiveTrees,
-      AvgTreeAgeYears: s.farm?.avgTreeAgeYears,
-      Variety: s.farm?.variety,
-      ShadeLevel: s.farm?.shadeLevel,
-      Irrigation: s.farm?.irrigation,
-      OverallCropCondition: s.cropCondition?.overallCondition,
-      PestPressure: s.cropCondition?.pestPressure,
-      DiseasePressure: s.cropCondition?.diseasePressure,
-      GreenCherryPct: s.harvestInfo?.greenCherryPct,
-      YellowCherryPct: s.harvestInfo?.yellowCherryPct,
-      RedCherryPct: s.harvestInfo?.redCherryPct,
-      HarvestedPct: s.harvestInfo?.harvestedPct,
-      EstHarvestStart: s.harvestInfo?.estHarvestStart,
-      EstPeakHarvest: s.harvestInfo?.estPeakHarvest,
-      EstHarvestCompletion: s.harvestInfo?.estHarvestCompletion,
-      PreviousProductionKg: s.cropEstimate?.previousProductionKg,
-      CurrentEstimateKg: s.cropEstimate?.currentEstimateKg,
-      ExpectedSecondCropKg: s.cropEstimate?.expectedSecondCropKg,
-      YieldPerHaKg: s.cropEstimate?.expectedYieldPerHaKg,
-      YieldPerTreeG: s.cropEstimate?.expectedYieldPerTreeG,
-      ChangePct: s.cropEstimate?.changePct,
-      Outlook: s.cropEstimate?.outlook,
-      EstFarmYieldKg: s.sampling?.estimatedFarmYieldKg,
-      FarmgatePriceIDR: s.interview?.farmgatePriceIDR,
-      MajorConcerns: s.interview?.majorConcerns,
+      Province: s.province,
+      District: s.district,
+      SampleNo: s.sampleNo,
+      Lat: s.gps?.lat,
+      Lon: s.gps?.lon,
+      FarmerId: s.farmerId,
+      FarmerName: s.farmerName,
+      FarmerPhNo: s.farmerPhNo,
+      FarmerNote: s.farmerNote,
+      TotalCoffeeAreaHa: s.totalCoffeeAreaHa,
+      BearingArea2026_27: s.bearingArea2026_27,
+      Production2026_27Quintals: s.production2026_27,
+      FlyCropCompareToLY: s.flyCropCompareToLY,
+      MainCropCompareToLY: s.mainCropCompareToLY,
+      ExistingPriceIDRKg: s.existingPrice,
     }));
   }
 
   function toGeoJSON(surveys) {
     return {
       type: 'FeatureCollection',
-      features: surveys.filter(s => s.location?.lat && s.location?.lon).map(s => ({
+      features: surveys.filter(s => s.gps?.lat && s.gps?.lon).map(s => ({
         type: 'Feature',
-        geometry: { type: 'Point', coordinates: [s.location.lon, s.location.lat] },
+        geometry: { type: 'Point', coordinates: [s.gps.lon, s.gps.lat] },
         properties: {
-          id: s.id, status: s.status, coffeeType: s.coffeeType, province: s.location.province,
-          district: s.location.district, farmerId: s.farm?.farmerId, farmAreaHa: s.farm?.farmAreaHa,
-          changePct: s.cropEstimate?.changePct, outlook: s.cropEstimate?.outlook,
-          harvestedPct: s.harvestInfo?.harvestedPct, surveyDate: s.surveyDate,
+          id: s.id, status: s.status, province: s.province, district: s.district,
+          farmerId: s.farmerId, farmerName: s.farmerName,
+          totalCoffeeAreaHa: s.totalCoffeeAreaHa, production2026_27: s.production2026_27,
+          flyCropCompareToLY: s.flyCropCompareToLY, surveyDate: s.surveyDate,
         },
       })),
     };
@@ -198,11 +175,11 @@ const Utils = (() => {
 
   function toKML(surveys) {
     const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const placemarks = surveys.filter(s => s.location?.lat && s.location?.lon).map(s => `
+    const placemarks = surveys.filter(s => s.gps?.lat && s.gps?.lon).map(s => `
     <Placemark>
-      <name>${esc(s.id)}</name>
-      <description>${esc(s.coffeeType)} | ${esc(s.farm?.farmerId)} | Outlook: ${esc(s.cropEstimate?.outlook)}</description>
-      <Point><coordinates>${s.location.lon},${s.location.lat},0</coordinates></Point>
+      <name>${esc(s.farmerId || s.id)}</name>
+      <description>${esc(s.farmerName)} | Fly Crop vs LY: ${esc(s.flyCropCompareToLY)}</description>
+      <Point><coordinates>${s.gps.lon},${s.gps.lat},0</coordinates></Point>
     </Placemark>`).join('');
     return `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2"><Document>${placemarks}</Document></kml>`;

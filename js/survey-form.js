@@ -82,6 +82,7 @@ const SurveyForm = (() => {
       district: '',
 
       // Col D-H: Farmers
+      farmerId: '',
       farmerName: '',
       farmerPhNo: '',
       farmerNote: '',
@@ -233,6 +234,7 @@ const SurveyForm = (() => {
         ${selectField('province', s.province, 'Province', refData.provinces)}
         ${textField('district', s.district, 'District')}
         <div class="section-label">Farmers</div>
+        ${textField('farmerId', s.farmerId, 'Farmer ID')}
         ${textField('farmerName', s.farmerName, 'Name')}
         ${textField('farmerPhNo', s.farmerPhNo, 'Ph No.', 'tel')}
         ${textField('farmerNote', s.farmerNote, 'Note')}
@@ -415,6 +417,7 @@ const SurveyForm = (() => {
         <div><b>Date</b><span>${s.surveyDate}</span></div>
         <div><b>Surveyor</b><span>${s.surveyor || '—'}</span></div>
         <div><b>Province / District</b><span>${s.province || '—'} / ${s.district || '—'}</span></div>
+        <div><b>Farmer ID</b><span>${s.farmerId || '—'}</span></div>
         <div><b>Farmer</b><span>${s.farmerName || '—'} (${s.farmerPhNo || '—'})</span></div>
         <div><b>Total Coffee Area (Ha)</b><span>${s.totalCoffeeAreaHa ?? '—'}</span></div>
         <div><b>Production 2026-27 (Quintals)</b><span>${s.production2026_27 ?? '—'}</span></div>

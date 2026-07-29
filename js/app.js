@@ -166,8 +166,8 @@ const App = (() => {
     document.getElementById('recent-list').innerHTML = recent.length ? recent.map(s => `
       <div class="list-row" data-id="${s.id}">
         <div class="list-row-main">
-          <b>${s.farm?.farmerId || s.id}</b> — ${s.location?.province || '—'}, ${s.location?.district || ''}
-          <div class="muted small">${s.coffeeType} · ${s.surveyDate} · ${s.surveyor}</div>
+          <b>${s.farmerId || s.id}</b> — ${s.farmerName || 'Unnamed'} · ${s.province || '—'}, ${s.district || ''}
+          <div class="muted small">${s.surveyDate} · ${s.surveyor}</div>
         </div>
         <span class="status-chip status-${s.status}">${statusLabel(s.status)}</span>
       </div>`).join('') : '<p class="muted">No submissions yet.</p>';
@@ -198,8 +198,8 @@ const App = (() => {
     document.getElementById('survey-list').innerHTML = filtered.map(s => `
       <div class="list-row" data-id="${s.id}">
         <div class="list-row-main">
-          <b>${s.farm?.farmerId || s.id}</b> — ${s.farm?.farmerName || 'Unnamed'}
-          <div class="muted small">${s.coffeeType} · ${s.location?.province || '—'} · ${s.surveyDate} · ${s.surveyor}</div>
+          <b>${s.farmerId || s.id}</b> — ${s.farmerName || 'Unnamed'}
+          <div class="muted small">${s.province || '—'} · ${s.surveyDate} · ${s.surveyor}</div>
         </div>
         <span class="status-chip status-${s.status}">${statusLabel(s.status)}</span>
       </div>`).join('') || '<p class="muted">No surveys match filters.</p>';
@@ -224,20 +224,20 @@ const App = (() => {
     rootEl().innerHTML = `
       <div class="card">
         <button class="btn-secondary" id="btn-back">◀ Back</button>
-        <h3>${s.farm?.farmerId || s.id} — ${s.farm?.farmerName || ''}</h3>
+        <h3>${s.farmerId || s.id} — ${s.farmerName || ''}</h3>
         <span class="status-chip status-${s.status}">${statusLabel(s.status)}</span>
       </div>
       <div class="card">
         <div class="card-title">Location</div>
-        <div class="kv">${kvRow('Province', s.location?.province)}${kvRow('District', s.location?.district)}${kvRow('Sub-district', s.location?.subdistrict)}${kvRow('Village', s.location?.village)}${kvRow('GPS', s.location?.lat ? `${s.location.lat}, ${s.location.lon}` : '—')}${kvRow('Altitude', s.location?.altitude + ' m')}</div>
+        <div class="kv">${kvRow('Province', s.province)}${kvRow('District', s.district)}${kvRow('Sample No.', s.sampleNo)}${kvRow('GPS', s.gps?.lat ? `${s.gps.lat}, ${s.gps.lon}` : '—')}</div>
       </div>
       <div class="card">
-        <div class="card-title">Farm & Crop</div>
-        <div class="kv">${kvRow('Coffee Type', s.coffeeType)}${kvRow('Farm Area', s.farm?.farmAreaHa + ' ha')}${kvRow('Productive Trees', s.farm?.productiveTrees)}${kvRow('Variety', s.farm?.variety)}${kvRow('Overall Condition', s.cropCondition?.overallCondition + '/5')}</div>
+        <div class="card-title">Farmer</div>
+        <div class="kv">${kvRow('Farmer ID', s.farmerId)}${kvRow('Name', s.farmerName)}${kvRow('Phone', s.farmerPhNo)}${kvRow('Note', s.farmerNote)}</div>
       </div>
       <div class="card">
-        <div class="card-title">Crop Estimate</div>
-        <div class="kv">${kvRow('Previous Production', Utils.fmtKgOrMt(s.cropEstimate?.previousProductionKg))}${kvRow('Current Estimate', Utils.fmtKgOrMt(s.cropEstimate?.currentEstimateKg))}${kvRow('Change', Utils.fmtPct(s.cropEstimate?.changePct))}${kvRow('Outlook', s.cropEstimate?.outlook)}${kvRow('Harvested %', s.harvestInfo?.harvestedPct + '%')}</div>
+        <div class="card-title">Coffee Area &amp; Production</div>
+        <div class="kv">${kvRow('Total Coffee Area (Ha)', s.totalCoffeeAreaHa)}${kvRow('Bearing Area 2026-27 (Ha)', s.bearingArea2026_27)}${kvRow('Production 2026-27 (Quintals)', s.production2026_27)}${kvRow('Fly Crop vs LY', s.flyCropCompareToLY)}${kvRow('Main Crop vs LY', s.mainCropCompareToLY)}</div>
       </div>
       <div class="card">
         <div class="card-title">Photos</div>
@@ -287,14 +287,13 @@ const App = (() => {
         const s = pt.survey;
         document.getElementById('point-detail').innerHTML = `
           <div class="card">
-            <div class="card-title">${s.farm?.farmerId || s.id}</div>
+            <div class="card-title">${s.farmerId || s.id} — ${s.farmerName || ''}</div>
             <div class="kv">
-              ${kvRow('Location', `${s.location.village}, ${s.location.district}, ${s.location.province}`)}
-              ${kvRow('Coffee Type', s.coffeeType)}
-              ${kvRow('Farm Size', s.farm?.farmAreaHa + ' ha')}
-              ${kvRow('Crop Estimate', Utils.fmtKgOrMt(s.cropEstimate?.currentEstimateKg))}
-              ${kvRow('Change vs Last Crop', Utils.fmtPct(s.cropEstimate?.changePct))}
-              ${kvRow('Harvest Progress', (s.harvestInfo?.harvestedPct ?? 0) + '%')}
+              ${kvRow('Location', `${s.district || ''}, ${s.province || ''}`)}
+              ${kvRow('Farmer ID', s.farmerId)}
+              ${kvRow('Total Coffee Area', (s.totalCoffeeAreaHa ?? '—') + ' ha')}
+              ${kvRow('Production 2026-27', (s.production2026_27 ?? '—') + ' Quintals')}
+              ${kvRow('Fly Crop vs LY', s.flyCropCompareToLY)}
               ${kvRow('Survey Date', s.surveyDate)}
             </div>
             ${(s.photos||[]).length ? `<div class="photo-grid">${s.photos.map(p=>`<img src="${p.dataUrl}" class="photo-thumb"/>`).join('')}</div>` : ''}
