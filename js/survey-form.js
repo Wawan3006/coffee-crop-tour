@@ -1,41 +1,58 @@
 // ============================================================================
-// survey-form.js — Multi-step "New Crop Survey" wizard.
-// Rebuilt to match the official Crop Tour Questionnaire (QN.xlsx) column
-// structure exactly. Steps:
-//   Sample & Location -> Farmer -> Coffee Area -> Additional Bearing ->
-//   Bearing & Production -> Selling 2026-27 -> Stock & Fly Crop Outlook ->
-//   Fly Crop Volumes -> Main Crop Outlook -> Weather & Crop Development ->
-//   Price & Market -> Labor & Inputs -> Photos -> Review -> Submit
+// survey-form.js — Multi-step "Crop Tour Questionnaire" wizard.
+// Field-for-field rebuild matching QN.xlsx exactly: all 75 questionnaire
+// columns, in original column order (A..BW), with the exact coded dropdown
+// options taken verbatim from the spreadsheet's header legends.
+//
+// Steps (grouped by the spreadsheet's merged header sections):
+//   1. Sample & Farmer            (cols A-H)
+//   2. Coffee Area                (cols I-K)
+//   3. Additional Bearing         (cols L-O)
+//   4. Bearing Area               (cols P-S)
+//   5. Production                 (cols T-W)
+//   6. Selling 2026-27 Crop        (cols X-AL, 15 months)
+//   7. Stock & Fly Crop Outlook   (cols AM-AO)
+//   8. Fly Crop Volumes           (cols AP-AW)
+//   9. Main Crop Outlook          (cols AX-BA)
+//  10. Weather & Crop Development (cols BB-BG)
+//  11. Price of Coffee            (cols BH-BM)
+//  12. Labor & Inputs             (cols BN-BW)
+//  13. Photos (app feature, not a spreadsheet column — optional field docs)
+//  14. Review
+//
+// Notes on deviations from the raw spreadsheet (kept minimal, for app use):
+//  - Survey Date, Surveyor are app metadata needed to file/audit each record.
+//  - GPS capture is an optional app feature for the map view; it is NOT one
+//    of the 75 questionnaire columns and has no bearing on QN.xlsx export.
 // Autosaves to IndexedDB 'drafts' store on every step change ("Save Draft").
 // ============================================================================
 
 const SurveyForm = (() => {
-  let state = null; // the in-progress survey object
+  let state = null;
   let stepIndex = 0;
   let container = null;
   let refData = { provinces: [], islands: [], surveyors: [] };
 
   const STEPS = [
-    'Sample & Location', 'Farmer', 'Coffee Area', 'Additional Bearing',
-    'Bearing & Production', 'Selling 2026-27', 'Stock & Fly Crop Outlook',
+    'Sample & Farmer', 'Coffee Area', 'Additional Bearing', 'Bearing Area',
+    'Production', 'Selling 2026-27 Crop', 'Stock & Fly Crop Outlook',
     'Fly Crop Volumes', 'Main Crop Outlook', 'Weather & Crop Development',
-    'Price & Market', 'Labor & Inputs', 'Photos', 'Review',
+    'Price of Coffee', 'Labor & Inputs', 'Photos', 'Review',
   ];
 
-  // ---- Option lists taken directly from QN.xlsx column headers/legends ----
-  const FLY_CROP_COMPARE = ['Higher', 'Same', 'Lower'];
-  const MAIN_CROP_COMPARE = ['Early', 'Same', 'Late'];
-  const MAIN_CROP_REASON = ['Rains', 'Flowering', 'Dryness'];
-  const START_MONTH_OPTIONS = ['3 - March', '4 - April', '5 - May'];
-  const PEAK_HARVEST_MONTH_OPTIONS = ['5 - May', '6 - June', '7 - July', '8 - August'];
+  // ---- Coded option lists copied verbatim from QN.xlsx header legends ----
+  const FLY_CROP_COMPARE = ['1 - Higher', '2 - Same', '3 - Lower'];
+  const MAIN_CROP_COMPARE = ['1 - Early', '2 - Same', '3 - Late'];
+  const MAIN_CROP_REASON = ['1 - Rains', '2 - Flowering', '3 - Dryness'];
+  const START_MONTH_OPTIONS = ['3', '4', '5'];
+  const PEAK_HARVEST_MONTH_OPTIONS = ['5', '6', '7', '8'];
   const RAINFALL_OPTIONS = ['BN - Below Normal', 'N - Normal', 'AN - Above Normal', 'Ex - Excessive'];
   const CROP_DEV_OPTIONS = ['BN - Below Normal', 'N - Normal', 'AN - Above Normal'];
   const DAMAGE_OPTIONS = [
-    '1 - Blossom', '2 - Fruit set', '3 - Blossom and Fruit set', '4 - Cherry development',
-    '5 - Fruit set and Cherry development', '6 - Blossom and Cherry development',
-    '7 - All 3 stages', '8 - No damage',
+    '1 - Blossom', '2 - Fruit set', '3 - 1 and 2', '4 - Cherry development',
+    '5 - 2 and 4', '6 - 1 and 4', '7 - All 3 stages', '8 - No damage',
   ];
-  const OPINION_PRICE_OPTIONS = ['Happy', 'Not Happy'];
+  const OPINION_PRICE_OPTIONS = ['1 - Happy', '2 - Not Happy'];
   const FUTURE_PRICE_OPTIONS = ['B - Bullish', 'N - Neutral', 'S - Bearish'];
   const REACTION_OPTIONS = [
     '1 - Increase grafting', '2 - Increase fertilizer', '3 - Better husbandry (other than fertilizer)',
@@ -45,6 +62,7 @@ const SurveyForm = (() => {
   const HERBICIDE_TYPE_OPTIONS = ['1 - Glifosat', '2 - Paraquat', '3 - 2,4-D', '4 - Combine', '5 - Others'];
   const PHOTO_CATEGORIES = ['Farm / Coffee Area', 'Trees / Cherries', 'Farmer Reference', 'Other'];
 
+  // ---- Flat field model: one key per QN.xlsx column, in column order ----
   function blankSurvey() {
     const user = Auth.currentUser();
     return {
@@ -52,41 +70,97 @@ const SurveyForm = (() => {
       status: 'draft',
       createdAt: Utils.nowIso(),
       updatedAt: Utils.nowIso(),
+
+      // App metadata (not a QN.xlsx column, needed to file/audit the record)
       surveyor: user ? user.name : '',
       surveyDate: new Date().toISOString().slice(0, 10),
-      cropYear: '2026-27',
-      coffeeType: 'Robusta',
+      gps: { lat: null, lon: null, accuracyM: null },
+
+      // Col A-C: Identification
       sampleNo: '',
-      location: { lat: null, lon: null, altitude: null, province: '', district: '' },
-      farmer: { name: '', phone: '', note: '', updatedName: '', updatedPhone: '' },
-      coffeeArea: { totalHaMar2025: null, totalHaCurrent: null, additionalExpandingTreesPerHa: null },
-      additionalBearing: { y2025Ha: null, y2025Trees: null, y2026Ha: null, y2026Trees: null },
-      bearingArea: { y2024_25: null, y2025_26: null, y2026_27: null, y2027_28: null },
-      production: { y2024_25: null, y2025_26: null, y2026_27: null, y2027_28: null },
-      selling2026_27: {
-        nov25: null, dec25: null, jan26: null, feb26: null, mar26: null, apr26: null,
-        may26: null, jun26: null, jul26: null, aug26: null, sep26: null, oct26: null,
-        nov26: null, dec26: null, undecided: null,
-      },
-      stock: { actual2026_27Quintal: null, regionPct: null },
-      flyCrop: {
-        compareToLY: '',
-        harvesting: { nov26: null, dec26: null, jan27: null, feb27: null },
-        selling: { nov26: null, dec26: null, jan27: null, feb27: null },
-      },
-      mainCrop: { compareToLY: '', reason: '', startMonth: '', peakHarvestMonth: '' },
-      weatherDev: {
-        rainfallBlossom: '', rainfallFruitSet: '', devBlossom: '', devFruitSet: '',
-        damage: '', rainsAtOpeningBlossom: false,
-      },
-      priceMarket: {
-        avgPriceSold2025_26: null, existingPrice: null, expectedPrice: null,
-        opinionCurrentPrice: '', futurePrice: '', reactionToHigherPrice: '',
-      },
-      laborInputs: {
-        wage2025: null, wage2026: null, herbicideType: '', herbicideLitersPerYear: null,
-        fertilizer: { npk2025: null, npk2026: null, urea2025: null, urea2026: null, tsp2025: null, tsp2026: null },
-      },
+      province: '',
+      district: '',
+
+      // Col D-H: Farmers
+      farmerName: '',
+      farmerPhNo: '',
+      farmerNote: '',
+      farmerUpdateName: '',
+      farmerUpdatePhoneNumber: '',
+
+      // Col I-K: Coffee Area
+      totalCoffeeAreaHaMar2025: null,
+      totalCoffeeAreaHa: null,
+      additionalExpandingTreesPerHa: null,
+
+      // Col L-O: Additional bearing (area and trees)
+      addBearing2025Ha: null,
+      addBearing2025Trees: null,
+      addBearing2026Ha: null,
+      addBearing2026Trees: null,
+
+      // Col P-S: Bearing Area (ha)
+      bearingArea2024_25: null,
+      bearingArea2025_26: null,
+      bearingArea2026_27: null,
+      bearingArea2027_28: null,
+
+      // Col T-W: Production (Quintals)
+      production2024_25: null,
+      production2025_26: null,
+      production2026_27: null,
+      production2027_28: null,
+
+      // Col X-AL: Selling of 2026-27 crop (Quintals)
+      sellingNov25: null, sellingDec25: null, sellingJan26: null, sellingFeb26: null,
+      sellingMar26: null, sellingApr26: null, sellingMay26: null, sellingJun26: null,
+      sellingJul26: null, sellingAug26: null, sellingSep26: null, sellingOct26: null,
+      sellingNov26: null, sellingDec26: null, sellingUndecided: null,
+
+      // Col AM-AN: Stock
+      actualStock202627Quintal: null,
+      stockRegionPct: null,
+
+      // Col AO: Fly crop outlook
+      flyCropCompareToLY: '',
+
+      // Col AP-AS: Harvesting Fly Crop of 2027-28 crop
+      flyHarvestNov26: null, flyHarvestDec26: null, flyHarvestJan27: null, flyHarvestFeb27: null,
+
+      // Col AT-AW: Selling Fly Crop of 2027-28 crop
+      flySellNov26: null, flySellDec26: null, flySellJan27: null, flySellFeb27: null,
+
+      // Col AX-BA: Main crop outlook
+      mainCropCompareToLY: '',
+      mainCropReason: '',
+      mainCropStartMonth: '',
+      peakHarvestMonth: '',
+
+      // Col BB-BG: Weather & crop development
+      rainfallBlossom: '',
+      rainfallFruitSet: '',
+      devBlossom: '',
+      devFruitSet: '',
+      damage: '',
+      rainsAtOpeningBlossom: false,
+
+      // Col BH-BM: Price of coffee (IDR/Kg)
+      avgPriceSold2025_26: null,
+      existingPrice: null,
+      expectedPrice: null,
+      opinionCurrentPrice: '',
+      futurePrice: '',
+      reactionHigherPrice: '',
+
+      // Col BN-BW: Labor & inputs
+      laborWage2025: null,
+      laborWage2026: null,
+      herbicideType: '',
+      herbicideLitersPerYear: null,
+      npk2025: null, npk2026: null,
+      urea2025: null, urea2026: null,
+      tsp2025: null, tsp2026: null,
+
       photos: [],
     };
   }
@@ -125,7 +199,7 @@ const SurveyForm = (() => {
   function toggleField(name, value, label) {
     return `<div class="field toggle-field">
       <label>${label}</label>
-      <button type="button" class="toggle-btn ${value ? 'on' : ''}" data-field="${name}" data-toggle="1">${value ? 'Yes' : 'No'}</button>
+      <button type="button" class="toggle-btn ${value ? 'on' : ''}" data-field="${name}" data-toggle="1">${value ? 'Y' : 'N'}</button>
     </div>`;
   }
 
@@ -139,208 +213,195 @@ const SurveyForm = (() => {
     o[keys[keys.length - 1]] = value;
   }
 
-  // ===================== STEP 1: Sample & Location =====================
-  function stepSampleLocation() {
-    const l = state.location;
+  // ===================== STEP 1: Sample & Farmer (cols A-H) =====================
+  function stepSampleFarmer() {
+    const s = state;
     return `
       <div class="step-body">
-        ${textField('surveyDate', state.surveyDate, 'Survey Date', 'date')}
-        ${selectField('surveyor', state.surveyor, 'Surveyor Name', refData.surveyors)}
-        ${textField('cropYear', state.cropYear, 'Crop Year (e.g. 2026-27)')}
-        ${textField('sampleNo', state.sampleNo, 'Sample No.')}
+        <div class="section-label">App Metadata</div>
+        ${textField('surveyDate', s.surveyDate, 'Survey Date', 'date')}
+        ${selectField('surveyor', s.surveyor, 'Surveyor Name', refData.surveyors)}
         <div class="field">
-          <label>Coffee Type</label>
-          <div class="toggle-group">
-            <button type="button" class="chip ${state.coffeeType==='Robusta'?'active':''}" data-field="coffeeType" data-value="Robusta">Robusta</button>
-            <button type="button" class="chip ${state.coffeeType==='Arabica'?'active':''}" data-field="coffeeType" data-value="Arabica">Arabica</button>
-          </div>
-        </div>
-        <div class="field">
-          <label>GPS Coordinates</label>
+          <label>GPS (optional, for map view)</label>
           <div class="gps-row">
-            <input type="text" readonly value="${l.lat && l.lon ? `${l.lat}, ${l.lon} (±${l.accuracyM || '?'}m)` : 'Not captured yet'}"/>
+            <input type="text" readonly value="${s.gps.lat && s.gps.lon ? `${s.gps.lat}, ${s.gps.lon} (±${s.gps.accuracyM || '?'}m)` : 'Not captured'}"/>
             <button type="button" id="btn-capture-gps" class="btn-secondary">📍 Capture GPS</button>
           </div>
         </div>
-        ${selectField('location.province', l.province, 'Province', refData.provinces)}
-        ${textField('location.district', l.district, 'District')}
-        ${textField('location.altitude', l.altitude, 'Altitude (m)', 'number')}
+        <div class="section-label">Sample No. / Province / District</div>
+        ${textField('sampleNo', s.sampleNo, 'Sample No.')}
+        ${selectField('province', s.province, 'Province', refData.provinces)}
+        ${textField('district', s.district, 'District')}
+        <div class="section-label">Farmers</div>
+        ${textField('farmerName', s.farmerName, 'Name')}
+        ${textField('farmerPhNo', s.farmerPhNo, 'Ph No.', 'tel')}
+        ${textField('farmerNote', s.farmerNote, 'Note')}
+        ${textField('farmerUpdateName', s.farmerUpdateName, 'Update Name')}
+        ${textField('farmerUpdatePhoneNumber', s.farmerUpdatePhoneNumber, 'Phone number', 'tel')}
       </div>`;
   }
 
-  // ===================== STEP 2: Farmer =====================
-  function stepFarmer() {
-    const f = state.farmer;
-    return `<div class="step-body">
-      ${textField('farmer.name', f.name, 'Farmer Name')}
-      ${textField('farmer.phone', f.phone, 'Ph No.', 'tel')}
-      ${textField('farmer.note', f.note, 'Note')}
-      ${textField('farmer.updatedName', f.updatedName, 'Update Name (if changed)')}
-      ${textField('farmer.updatedPhone', f.updatedPhone, 'Update Phone Number (if changed)', 'tel')}
-    </div>`;
-  }
-
-  // ===================== STEP 3: Coffee Area =====================
+  // ===================== STEP 2: Coffee Area (cols I-K) =====================
   function stepCoffeeArea() {
-    const c = state.coffeeArea;
+    const s = state;
     return `<div class="step-body">
-      ${textField('coffeeArea.totalHaMar2025', c.totalHaMar2025, 'Total Coffee Area (Ha) Mar 2025', 'number', 'step="0.01"')}
-      ${textField('coffeeArea.totalHaCurrent', c.totalHaCurrent, 'Total Coffee Area (Ha) — Current', 'number', 'step="0.01"')}
-      ${textField('coffeeArea.additionalExpandingTreesPerHa', c.additionalExpandingTreesPerHa, 'Any Additional / Expanding Trees per Ha', 'number', 'step="0.01"')}
+      ${textField('totalCoffeeAreaHaMar2025', s.totalCoffeeAreaHaMar2025, 'Total Coffee Area (Ha) Mar 2025', 'number', 'step="0.01"')}
+      ${textField('totalCoffeeAreaHa', s.totalCoffeeAreaHa, 'Total Coffee Area (Ha)', 'number', 'step="0.01"')}
+      ${textField('additionalExpandingTreesPerHa', s.additionalExpandingTreesPerHa, 'Any Additional/Expanding Trees/Ha', 'number', 'step="0.01"')}
     </div>`;
   }
 
-  // ===================== STEP 4: Additional Bearing =====================
+  // ===================== STEP 3: Additional Bearing (cols L-O) =====================
   function stepAdditionalBearing() {
-    const a = state.additionalBearing;
+    const s = state;
     return `<div class="step-body">
-      <div class="section-label">Additional Bearing (Area &amp; Trees) in 2025</div>
-      ${textField('additionalBearing.y2025Ha', a.y2025Ha, '2025 — Ha', 'number', 'step="0.01"')}
-      ${textField('additionalBearing.y2025Trees', a.y2025Trees, '2025 — Trees', 'number')}
-      <div class="section-label">Additional Bearing (Area &amp; Trees) in 2026</div>
-      ${textField('additionalBearing.y2026Ha', a.y2026Ha, '2026 — Ha', 'number', 'step="0.01"')}
-      ${textField('additionalBearing.y2026Trees', a.y2026Trees, '2026 — Trees', 'number')}
+      <div class="section-label">Additional Bearing (Area and Trees) in 2025</div>
+      ${textField('addBearing2025Ha', s.addBearing2025Ha, 'Ha', 'number', 'step="0.01"')}
+      ${textField('addBearing2025Trees', s.addBearing2025Trees, 'Trees', 'number')}
+      <div class="section-label">Additional Bearing (Area and Trees) in 2026</div>
+      ${textField('addBearing2026Ha', s.addBearing2026Ha, 'Ha', 'number', 'step="0.01"')}
+      ${textField('addBearing2026Trees', s.addBearing2026Trees, 'Trees', 'number')}
     </div>`;
   }
 
-  // ===================== STEP 5: Bearing Area & Production =====================
-  function stepBearingProduction() {
-    const b = state.bearingArea;
-    const p = state.production;
+  // ===================== STEP 4: Bearing Area (ha) (cols P-S) =====================
+  function stepBearingArea() {
+    const s = state;
     return `<div class="step-body">
       <div class="section-label">Bearing Area (ha)</div>
-      ${textField('bearingArea.y2024_25', b.y2024_25, '2024-25', 'number', 'step="0.01"')}
-      ${textField('bearingArea.y2025_26', b.y2025_26, '2025-26', 'number', 'step="0.01"')}
-      ${textField('bearingArea.y2026_27', b.y2026_27, '2026-27', 'number', 'step="0.01"')}
-      ${textField('bearingArea.y2027_28', b.y2027_28, '2027-28', 'number', 'step="0.01"')}
-      <div class="section-label">Production (Quintals)</div>
-      ${textField('production.y2024_25', p.y2024_25, '2024-25', 'number', 'step="0.01"')}
-      ${textField('production.y2025_26', p.y2025_26, '2025-26', 'number', 'step="0.01"')}
-      ${textField('production.y2026_27', p.y2026_27, '2026-27', 'number', 'step="0.01"')}
-      ${textField('production.y2027_28', p.y2027_28, '2027-28', 'number', 'step="0.01"')}
+      ${textField('bearingArea2024_25', s.bearingArea2024_25, '2024-25', 'number', 'step="0.01"')}
+      ${textField('bearingArea2025_26', s.bearingArea2025_26, '2025-26', 'number', 'step="0.01"')}
+      ${textField('bearingArea2026_27', s.bearingArea2026_27, '2026-27', 'number', 'step="0.01"')}
+      ${textField('bearingArea2027_28', s.bearingArea2027_28, '2027-28', 'number', 'step="0.01"')}
     </div>`;
   }
 
-  // ===================== STEP 6: Selling of 2026-27 crop (Quintals) =====================
+  // ===================== STEP 5: Production (Quintals) (cols T-W) =====================
+  function stepProduction() {
+    const s = state;
+    return `<div class="step-body">
+      <div class="section-label">Production (Quintals)</div>
+      ${textField('production2024_25', s.production2024_25, '2024-25', 'number', 'step="0.01"')}
+      ${textField('production2025_26', s.production2025_26, '2025-26', 'number', 'step="0.01"')}
+      ${textField('production2026_27', s.production2026_27, '2026-27', 'number', 'step="0.01"')}
+      ${textField('production2027_28', s.production2027_28, '2027-28', 'number', 'step="0.01"')}
+    </div>`;
+  }
+
+  // ===================== STEP 6: Selling of 2026-27 crop (Quintals) (cols X-AL) =====================
   function stepSelling() {
-    const s = state.selling2026_27;
+    const s = state;
     const months = [
-      ['nov25', 'Nov-25'], ['dec25', 'Dec-25'], ['jan26', 'Jan-26'], ['feb26', 'Feb-26'],
-      ['mar26', 'Mar-26'], ['apr26', 'Apr-26'], ['may26', 'May-26'], ['jun26', 'Jun-26'],
-      ['jul26', 'Jul-26'], ['aug26', 'Aug-26'], ['sep26', 'Sep-26'], ['oct26', 'Oct-26'],
-      ['nov26', 'Nov-26'], ['dec26', 'Dec-26'], ['undecided', 'Undecided'],
+      ['sellingNov25', 'Nov-25'], ['sellingDec25', 'Dec-25'], ['sellingJan26', 'Jan-26'], ['sellingFeb26', 'Feb-26'],
+      ['sellingMar26', 'Mar-26'], ['sellingApr26', 'Apr-26'], ['sellingMay26', 'May-26'], ['sellingJun26', 'Jun-26'],
+      ['sellingJul26', 'Jul-26'], ['sellingAug26', 'Aug-26'], ['sellingSep26', 'Sep-26'], ['sellingOct26', 'Oct-26'],
+      ['sellingNov26', 'Nov-26'], ['sellingDec26', 'Dec-26'], ['sellingUndecided', 'Undecided'],
     ];
     return `<div class="step-body">
-      <div class="section-label">Selling of 2026-27 Crop (Quintals) by Month</div>
-      ${months.map(([key, label]) => textField(`selling2026_27.${key}`, s[key], label, 'number', 'step="0.01"')).join('')}
+      <div class="section-label">Selling of 2026-27 Crop (Quintals)</div>
+      ${months.map(([key, label]) => textField(key, s[key], label, 'number', 'step="0.01"')).join('')}
     </div>`;
   }
 
-  // ===================== STEP 7: Stock & Fly Crop Outlook =====================
+  // ===================== STEP 7: Stock & Fly Crop Outlook (cols AM-AO) =====================
   function stepStockFlyOutlook() {
-    const st = state.stock;
-    const fc = state.flyCrop;
+    const s = state;
     return `<div class="step-body">
-      <div class="section-label">Stock</div>
-      ${textField('stock.actual2026_27Quintal', st.actual2026_27Quintal, 'Actual Stock 2026-27 Coffee at Home (Quintal)', 'number', 'step="0.01"')}
-      ${textField('stock.regionPct', st.regionPct, 'Stock in the Region (%)', 'number', 'step="0.1"')}
-      <div class="section-label">Fly Crop Outlook</div>
-      ${selectField('flyCrop.compareToLY', fc.compareToLY, 'Fly Crop Compared to Last Year', FLY_CROP_COMPARE)}
+      ${textField('actualStock202627Quintal', s.actualStock202627Quintal, 'Actual Stock 2026-27 Coffee at Home (Quintal)', 'number', 'step="0.01"')}
+      ${textField('stockRegionPct', s.stockRegionPct, 'Stock in the Region (%)', 'number', 'step="0.1"')}
+      ${selectField('flyCropCompareToLY', s.flyCropCompareToLY, 'Fly Crop Compare to LY', FLY_CROP_COMPARE)}
     </div>`;
   }
 
-  // ===================== STEP 8: Fly Crop Volumes =====================
+  // ===================== STEP 8: Fly Crop Volumes (cols AP-AW) =====================
   function stepFlyCropVolumes() {
-    const h = state.flyCrop.harvesting;
-    const s = state.flyCrop.selling;
+    const s = state;
     return `<div class="step-body">
       <div class="section-label">Harvesting Fly Crop of 2027-28 Crop (Quintals)</div>
-      ${textField('flyCrop.harvesting.nov26', h.nov26, 'Nov-26', 'number', 'step="0.01"')}
-      ${textField('flyCrop.harvesting.dec26', h.dec26, 'Dec-26', 'number', 'step="0.01"')}
-      ${textField('flyCrop.harvesting.jan27', h.jan27, 'Jan-27', 'number', 'step="0.01"')}
-      ${textField('flyCrop.harvesting.feb27', h.feb27, 'Feb-27', 'number', 'step="0.01"')}
+      ${textField('flyHarvestNov26', s.flyHarvestNov26, 'Nov-26', 'number', 'step="0.01"')}
+      ${textField('flyHarvestDec26', s.flyHarvestDec26, 'Dec-26', 'number', 'step="0.01"')}
+      ${textField('flyHarvestJan27', s.flyHarvestJan27, 'Jan-27', 'number', 'step="0.01"')}
+      ${textField('flyHarvestFeb27', s.flyHarvestFeb27, 'Feb-27', 'number', 'step="0.01"')}
       <div class="section-label">Selling Fly Crop of 2027-28 Crop (Quintals)</div>
-      ${textField('flyCrop.selling.nov26', s.nov26, 'Nov-26', 'number', 'step="0.01"')}
-      ${textField('flyCrop.selling.dec26', s.dec26, 'Dec-26', 'number', 'step="0.01"')}
-      ${textField('flyCrop.selling.jan27', s.jan27, 'Jan-27', 'number', 'step="0.01"')}
-      ${textField('flyCrop.selling.feb27', s.feb27, 'Feb-27', 'number', 'step="0.01"')}
+      ${textField('flySellNov26', s.flySellNov26, 'Nov-26', 'number', 'step="0.01"')}
+      ${textField('flySellDec26', s.flySellDec26, 'Dec-26', 'number', 'step="0.01"')}
+      ${textField('flySellJan27', s.flySellJan27, 'Jan-27', 'number', 'step="0.01"')}
+      ${textField('flySellFeb27', s.flySellFeb27, 'Feb-27', 'number', 'step="0.01"')}
     </div>`;
   }
 
-  // ===================== STEP 9: Main Crop Outlook =====================
+  // ===================== STEP 9: Main Crop Outlook (cols AX-BA) =====================
   function stepMainCrop() {
-    const m = state.mainCrop;
+    const s = state;
     return `<div class="step-body">
-      ${selectField('mainCrop.compareToLY', m.compareToLY, 'Main Crop Compared to Last Year', MAIN_CROP_COMPARE)}
-      ${selectField('mainCrop.reason', m.reason, 'Reason', MAIN_CROP_REASON)}
-      ${selectField('mainCrop.startMonth', m.startMonth, 'Main Crop Start Month', START_MONTH_OPTIONS)}
-      ${selectField('mainCrop.peakHarvestMonth', m.peakHarvestMonth, 'Peak Harvest Month', PEAK_HARVEST_MONTH_OPTIONS)}
+      ${selectField('mainCropCompareToLY', s.mainCropCompareToLY, 'Main Crop Compare to LY', MAIN_CROP_COMPARE)}
+      ${selectField('mainCropReason', s.mainCropReason, 'Reason', MAIN_CROP_REASON)}
+      ${selectField('mainCropStartMonth', s.mainCropStartMonth, 'Main Crop Start Month (3=Mar, 4=Apr, 5=May)', START_MONTH_OPTIONS)}
+      ${selectField('peakHarvestMonth', s.peakHarvestMonth, 'Peak Harvest Month (5=May, 6=Jun, 7=Jul, 8=Aug)', PEAK_HARVEST_MONTH_OPTIONS)}
     </div>`;
   }
 
-  // ===================== STEP 10: Weather & Crop Development =====================
+  // ===================== STEP 10: Weather & Crop Development (cols BB-BG) =====================
   function stepWeatherDev() {
-    const w = state.weatherDev;
+    const s = state;
     return `<div class="step-body">
       <div class="section-label">Rainfall for 2027-28 Crop Developmental Stages</div>
-      ${selectField('weatherDev.rainfallBlossom', w.rainfallBlossom, 'Blossom', RAINFALL_OPTIONS)}
-      ${selectField('weatherDev.rainfallFruitSet', w.rainfallFruitSet, 'Fruit Set', RAINFALL_OPTIONS)}
+      ${selectField('rainfallBlossom', s.rainfallBlossom, 'Blossom', RAINFALL_OPTIONS)}
+      ${selectField('rainfallFruitSet', s.rainfallFruitSet, 'Fruit Set', RAINFALL_OPTIONS)}
       <div class="section-label">2027-28 Crop Development</div>
-      ${selectField('weatherDev.devBlossom', w.devBlossom, 'Blossom', CROP_DEV_OPTIONS)}
-      ${selectField('weatherDev.devFruitSet', w.devFruitSet, 'Fruit Set', CROP_DEV_OPTIONS)}
-      ${selectField('weatherDev.damage', w.damage, 'Damage', DAMAGE_OPTIONS)}
-      ${toggleField('weatherDev.rainsAtOpeningBlossom', w.rainsAtOpeningBlossom, 'Rains at Opening Blossom')}
+      ${selectField('devBlossom', s.devBlossom, 'Blossom', CROP_DEV_OPTIONS)}
+      ${selectField('devFruitSet', s.devFruitSet, 'Fruit Set', CROP_DEV_OPTIONS)}
+      ${selectField('damage', s.damage, 'Damage', DAMAGE_OPTIONS)}
+      ${toggleField('rainsAtOpeningBlossom', s.rainsAtOpeningBlossom, 'Rains at Opening Blossom (Y/N)')}
     </div>`;
   }
 
-  // ===================== STEP 11: Price & Market =====================
-  function stepPriceMarket() {
-    const pm = state.priceMarket;
+  // ===================== STEP 11: Price of Coffee (IDR/Kg) (cols BH-BM) =====================
+  function stepPrice() {
+    const s = state;
     return `<div class="step-body">
-      <div class="section-label">Price of Coffee (IDR/Kg)</div>
-      ${textField('priceMarket.avgPriceSold2025_26', pm.avgPriceSold2025_26, 'Average Price They Sold 2025-26 Coffee', 'number')}
-      ${textField('priceMarket.existingPrice', pm.existingPrice, 'Existing Price', 'number')}
-      ${textField('priceMarket.expectedPrice', pm.expectedPrice, 'Expected Price', 'number')}
-      ${selectField('priceMarket.opinionCurrentPrice', pm.opinionCurrentPrice, 'Opinion for Current Price', OPINION_PRICE_OPTIONS)}
-      ${selectField('priceMarket.futurePrice', pm.futurePrice, 'Future Price', FUTURE_PRICE_OPTIONS)}
-      ${selectField('priceMarket.reactionToHigherPrice', pm.reactionToHigherPrice, 'Reaction to Recent Higher Price', REACTION_OPTIONS)}
+      ${textField('avgPriceSold2025_26', s.avgPriceSold2025_26, 'Average Price They Sold 2025-26 Coffee', 'number')}
+      ${textField('existingPrice', s.existingPrice, 'Existing', 'number')}
+      ${textField('expectedPrice', s.expectedPrice, 'Expected', 'number')}
+      ${selectField('opinionCurrentPrice', s.opinionCurrentPrice, 'Opinion for Current Price', OPINION_PRICE_OPTIONS)}
+      ${selectField('futurePrice', s.futurePrice, 'Future Price', FUTURE_PRICE_OPTIONS)}
+      ${selectField('reactionHigherPrice', s.reactionHigherPrice, 'Reaction to Recent Higher Price', REACTION_OPTIONS)}
     </div>`;
   }
 
-  // ===================== STEP 12: Labor & Inputs =====================
+  // ===================== STEP 12: Labor & Inputs (cols BN-BW) =====================
   function stepLaborInputs() {
-    const li = state.laborInputs;
-    const fert = li.fertilizer;
+    const s = state;
     return `<div class="step-body">
       <div class="section-label">Average Labor Wages (IDR/day)</div>
-      ${textField('laborInputs.wage2025', li.wage2025, '2025', 'number')}
-      ${textField('laborInputs.wage2026', li.wage2026, '2026', 'number')}
+      ${textField('laborWage2025', s.laborWage2025, '2025', 'number')}
+      ${textField('laborWage2026', s.laborWage2026, '2026', 'number')}
       <div class="section-label">Herbicides</div>
-      ${selectField('laborInputs.herbicideType', li.herbicideType, 'Application of Herbicides', HERBICIDE_TYPE_OPTIONS)}
-      ${textField('laborInputs.herbicideLitersPerYear', li.herbicideLitersPerYear, 'Herbicides per Year (liter)', 'number', 'step="0.1"')}
+      ${selectField('herbicideType', s.herbicideType, 'Application of Herbicides', HERBICIDE_TYPE_OPTIONS)}
+      ${textField('herbicideLitersPerYear', s.herbicideLitersPerYear, 'Application of Herbicides Per Year (liter)', 'number', 'step="0.1"')}
       <div class="section-label">Application of Fertilizers (Quintal)</div>
-      ${textField('laborInputs.fertilizer.npk2025', fert.npk2025, 'NPK — 2025', 'number', 'step="0.01"')}
-      ${textField('laborInputs.fertilizer.npk2026', fert.npk2026, 'NPK — 2026', 'number', 'step="0.01"')}
-      ${textField('laborInputs.fertilizer.urea2025', fert.urea2025, 'Urea — 2025', 'number', 'step="0.01"')}
-      ${textField('laborInputs.fertilizer.urea2026', fert.urea2026, 'Urea — 2026', 'number', 'step="0.01"')}
-      ${textField('laborInputs.fertilizer.tsp2025', fert.tsp2025, 'TSP — 2025', 'number', 'step="0.01"')}
-      ${textField('laborInputs.fertilizer.tsp2026', fert.tsp2026, 'TSP — 2026', 'number', 'step="0.01"')}
+      ${textField('npk2025', s.npk2025, 'NPK - 2025', 'number', 'step="0.01"')}
+      ${textField('npk2026', s.npk2026, 'NPK - 2026', 'number', 'step="0.01"')}
+      ${textField('urea2025', s.urea2025, 'Urea - 2025', 'number', 'step="0.01"')}
+      ${textField('urea2026', s.urea2026, 'Urea - 2026', 'number', 'step="0.01"')}
+      ${textField('tsp2025', s.tsp2025, 'TSP - 2025', 'number', 'step="0.01"')}
+      ${textField('tsp2026', s.tsp2026, 'TSP - 2026', 'number', 'step="0.01"')}
     </div>`;
   }
 
-  // ===================== STEP 13: Photos =====================
+  // ===================== STEP 13: Photos (app feature) =====================
   function stepPhotos() {
     const photos = state.photos;
     const cards = PHOTO_CATEGORIES.map(cat => {
       const p = photos.find(x => x.category === cat);
       return `<div class="photo-card">
         <div class="photo-card-label">${cat}</div>
-        ${p ? `<img src="${p.dataUrl}" class="photo-thumb"/><div class="photo-meta">📍${state.location.lat || '—'},${state.location.lon || '—'} · ${new Date(p.takenAt).toLocaleString()}</div>`
+        ${p ? `<img src="${p.dataUrl}" class="photo-thumb"/><div class="photo-meta">📍${state.gps.lat || '—'},${state.gps.lon || '—'} · ${new Date(p.takenAt).toLocaleString()}</div>`
             : `<div class="photo-placeholder">No photo</div>`}
         <input type="file" accept="image/*" capture="environment" data-photo-cat="${cat}" style="margin-top:6px"/>
       </div>`;
     }).join('');
-    return `<div class="step-body"><div class="photo-grid">${cards}</div></div>`;
+    return `<div class="step-body"><p class="muted small">Optional app feature — not part of the official questionnaire.</p><div class="photo-grid">${cards}</div></div>`;
   }
 
   // ===================== STEP 14: Review =====================
@@ -353,15 +414,13 @@ const SurveyForm = (() => {
         <div><b>Sample No.</b><span>${s.sampleNo || '—'}</span></div>
         <div><b>Date</b><span>${s.surveyDate}</span></div>
         <div><b>Surveyor</b><span>${s.surveyor || '—'}</span></div>
-        <div><b>Coffee Type</b><span>${s.coffeeType}</span></div>
-        <div><b>Province / District</b><span>${s.location.province || '—'} / ${s.location.district || '—'}</span></div>
-        <div><b>GPS</b><span>${s.location.lat ? `${s.location.lat}, ${s.location.lon}` : 'Not captured'}</span></div>
-        <div><b>Farmer</b><span>${s.farmer.name || '—'} (${s.farmer.phone || '—'})</span></div>
-        <div><b>Total Coffee Area (Current)</b><span>${s.coffeeArea.totalHaCurrent ?? '—'} ha</span></div>
-        <div><b>Production 2026-27 (Quintals)</b><span>${s.production.y2026_27 ?? '—'}</span></div>
-        <div><b>Fly Crop vs LY</b><span>${s.flyCrop.compareToLY || '—'}</span></div>
-        <div><b>Main Crop vs LY</b><span>${s.mainCrop.compareToLY || '—'}</span></div>
-        <div><b>Existing Price</b><span>${s.priceMarket.existingPrice ?? '—'} IDR/Kg</span></div>
+        <div><b>Province / District</b><span>${s.province || '—'} / ${s.district || '—'}</span></div>
+        <div><b>Farmer</b><span>${s.farmerName || '—'} (${s.farmerPhNo || '—'})</span></div>
+        <div><b>Total Coffee Area (Ha)</b><span>${s.totalCoffeeAreaHa ?? '—'}</span></div>
+        <div><b>Production 2026-27 (Quintals)</b><span>${s.production2026_27 ?? '—'}</span></div>
+        <div><b>Fly Crop vs LY</b><span>${s.flyCropCompareToLY || '—'}</span></div>
+        <div><b>Main Crop vs LY</b><span>${s.mainCropCompareToLY || '—'}</span></div>
+        <div><b>Existing Price (IDR/Kg)</b><span>${s.existingPrice ?? '—'}</span></div>
         <div><b>Photos</b><span>${s.photos.length} / ${PHOTO_CATEGORIES.length}</span></div>
       </div>
       <p class="muted">Please review all sections before submitting. You can navigate back to any step to make corrections.</p>
@@ -370,17 +429,17 @@ const SurveyForm = (() => {
 
   function renderStepBody() {
     switch (STEPS[stepIndex]) {
-      case 'Sample & Location': return stepSampleLocation();
-      case 'Farmer': return stepFarmer();
+      case 'Sample & Farmer': return stepSampleFarmer();
       case 'Coffee Area': return stepCoffeeArea();
       case 'Additional Bearing': return stepAdditionalBearing();
-      case 'Bearing & Production': return stepBearingProduction();
-      case 'Selling 2026-27': return stepSelling();
+      case 'Bearing Area': return stepBearingArea();
+      case 'Production': return stepProduction();
+      case 'Selling 2026-27 Crop': return stepSelling();
       case 'Stock & Fly Crop Outlook': return stepStockFlyOutlook();
       case 'Fly Crop Volumes': return stepFlyCropVolumes();
       case 'Main Crop Outlook': return stepMainCrop();
       case 'Weather & Crop Development': return stepWeatherDev();
-      case 'Price & Market': return stepPriceMarket();
+      case 'Price of Coffee': return stepPrice();
       case 'Labor & Inputs': return stepLaborInputs();
       case 'Photos': return stepPhotos();
       case 'Review': return stepReview();
@@ -423,13 +482,6 @@ const SurveyForm = (() => {
       });
     });
 
-    Utils.qsa('.chip[data-field]', body).forEach(btn => {
-      btn.addEventListener('click', () => {
-        setNested(state, btn.getAttribute('data-field'), btn.getAttribute('data-value'));
-        renderKeepStep();
-      });
-    });
-
     Utils.qsa('.toggle-btn[data-field]', body).forEach(btn => {
       btn.addEventListener('click', () => {
         const field = btn.getAttribute('data-field');
@@ -443,9 +495,8 @@ const SurveyForm = (() => {
       gpsBtn.textContent = '📍 Capturing...';
       try {
         const pos = await Geo.getPosition();
-        state.location.lat = pos.lat; state.location.lon = pos.lon;
-        state.location.accuracyM = pos.accuracy;
-        if (pos.altitude) state.location.altitude = pos.altitude;
+        state.gps.lat = pos.lat; state.gps.lon = pos.lon;
+        state.gps.accuracyM = pos.accuracy;
         App.toast('GPS captured successfully.');
       } catch (e) {
         App.toast('GPS capture failed: ' + e.message, 'error');
@@ -462,7 +513,7 @@ const SurveyForm = (() => {
           const existingIdx = state.photos.findIndex(p => p.category === cat);
           const photoRec = {
             photoId: Utils.uid('PHOTO'), category: cat, dataUrl,
-            takenAt: Utils.nowIso(), lat: state.location.lat, lon: state.location.lon, surveyId: state.id,
+            takenAt: Utils.nowIso(), lat: state.gps.lat, lon: state.gps.lon, surveyId: state.id,
           };
           if (existingIdx >= 0) state.photos[existingIdx] = photoRec; else state.photos.push(photoRec);
           renderKeepStep();
