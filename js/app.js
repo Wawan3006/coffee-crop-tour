@@ -99,6 +99,10 @@ const App = (() => {
     const pending = await Sync.getPendingCounts();
     const targetLocations = 350; // demo survey target
     const surveyProgressPct = Math.min(100, Math.round((agg.totalLocations / targetLocations) * 100));
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todaysSurveys = allSurveys.filter(s => (s.surveyDate || '').slice(0, 10) === todayStr);
+    const todaysSurveyCount = todaysSurveys.length;
+    const syncedTodayCount = todaysSurveys.filter(s => s.status === 'synced').length;
 
     rootEl().innerHTML = `
       ${filterBarHtml()}
@@ -134,13 +138,19 @@ const App = (() => {
       </div>
 
       <div class="card">
-        <div class="card-title">Offline Sync Status</div>
+        <div class="card-title">Today's Surveys &nbsp; <b>${todaysSurveyCount}</b></div>
         <div class="sync-status-row">
-          <span class="badge badge-draft">${pending.draft} Draft</span>
-          <span class="badge badge-waiting">${pending.waiting_sync} Waiting</span>
-          <span class="badge badge-error">${pending.sync_error} Error</span>
-          <span class="badge badge-synced">Online: ${Sync.isOnline() ? 'Yes' : 'No'}</span>
+          <span class="badge badge-synced">Synced &nbsp;${syncedTodayCount}</span>
+          <span class="badge badge-waiting">Waiting to Sync &nbsp;${pending.waiting_sync}</span>
+          <span class="badge badge-draft">Draft &nbsp;${pending.draft}</span>
+          <span class="badge badge-error">Sync Error &nbsp;${pending.sync_error}</span>
         </div>
+        <div class="muted small" style="margin-top:8px">
+          ${Sync.isOnline() ? '🟢 Online' : '🔴 Offline'} ${Api.isConfigured() ? '· Central server configured' : '· Local-only mode (no server configured)'}
+        </div>
+        <button id="btn-sync-now" class="btn-primary" style="width:100%;margin-top:10px" ${(!Sync.isOnline() || (pending.waiting_sync + pending.sync_error) === 0) ? 'disabled' : ''}>
+          ${Sync.isSyncing ? '⏳ Syncing...' : '🔄 SYNC NOW'}
+        </button>
       </div>
 
       <div class="card">
@@ -149,6 +159,15 @@ const App = (() => {
       </div>
     `;
     bindFilterBar(viewHome);
+
+    const syncNowBtn = document.getElementById('btn-sync-now');
+    if (syncNowBtn) syncNowBtn.addEventListener('click', async () => {
+      syncNowBtn.disabled = true;
+      syncNowBtn.textContent = '⏳ Syncing...';
+      const result = await Sync.syncAll();
+      toast(`Sync complete: ${result.synced} synced, ${result.failed} failed.`, result.failed ? 'error' : 'info');
+      viewHome();
+    });
 
     Charts.donutChart(document.getElementById('chart-coverage'), [
       { label: 'Robusta', value: agg.robustaCount, color: '#6f4e37' },
@@ -694,7 +713,15 @@ const App = (() => {
       ${secondary.map(r => `<button class="list-row list-row-btn" data-path="${r.path}"><span class="nav-icon">${r.icon}</span> ${r.label}</button>`).join('')}
       <button class="list-row list-row-btn" id="btn-switch-user"><span class="nav-icon">🔄</span> Switch User</button>
       <button class="list-row list-row-btn" id="btn-logout"><span class="nav-icon">🚪</span> Logout</button>
-    </div>`;
+    </div>
+    ${Auth.can('manageUsers') ? `
+    <div class="card">
+      <div class="card-title">Central Server (Administrator)</div>
+      <div class="muted small" style="margin-bottom:8px">
+        ${Api.isConfigured() ? `Connected to: <b>${localStorage.getItem('cct_api_base_url')}</b>` : 'No central server configured -- app is running in local-only mode.'}
+      </div>
+      <button class="btn-secondary" id="btn-configure-server" style="width:100%">⚙️ Configure Server URL</button>
+    </div>` : ''}`;
   }
 
   function updateHeader() {
@@ -721,6 +748,24 @@ const App = (() => {
       if (logoutBtn) logoutBtn.addEventListener('click', () => { Auth.logout(); renderLogin(); });
       const switchUserBtn = document.getElementById('btn-switch-user');
       if (switchUserBtn) switchUserBtn.addEventListener('click', () => { Auth.logout(); renderLogin(true); });
+      const configureServerBtn = document.getElementById('btn-configure-server');
+      if (configureServerBtn) configureServerBtn.addEventListener('click', async () => {
+        const current = localStorage.getItem('cct_api_base_url') || '';
+        const url = prompt('Enter the FastAPI backend URL (e.g. https://api.yourcompany.com), or leave blank to disable and use local-only mode:', current);
+        if (url === null) return;
+        Api.setBaseUrl(url.trim().replace(/\/$/, ''));
+        if (Api.isConfigured()) {
+          try {
+            await Api.healthCheck();
+            toast('Connected to central server successfully.');
+          } catch (e) {
+            toast('Could not reach that server: ' + e.message, 'error');
+          }
+        } else {
+          toast('Central server disabled. App is now local-only.');
+        }
+        navigate('#/more');
+      });
       return;
     }
 

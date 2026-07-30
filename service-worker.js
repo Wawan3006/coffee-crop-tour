@@ -4,7 +4,7 @@
 // via db.js, independent of network/service-worker cache.
 // ============================================================================
 
-const CACHE_NAME = 'coffee-crop-tour-v1';
+const CACHE_NAME = 'coffee-crop-tour-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const ASSETS = [
   './css/styles.css',
   './js/utils.js',
   './js/db.js',
+  './js/api.js',
   './js/auth.js',
   './js/geo.js',
   './js/charts.js',

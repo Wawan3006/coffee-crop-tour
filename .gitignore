@@ -1,0 +1,22 @@
+# Backend secrets and local artifacts
+backend/.env
+backend/*.db
+backend/photo_storage/
+backend/__pycache__/
+backend/tests/test_photo_storage/
+backend/tests/*.db
+
+# Analytics generated output (regenerate via run_pipeline.py)
+analytics/powerbi_export/
+analytics/__pycache__/
+analytics/tests/__pycache__/
+analytics/tests/*.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
