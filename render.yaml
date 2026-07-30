@@ -1,0 +1,41 @@
+# Render.com Blueprint -- deploys the Coffee Crop Tour backend + a free
+# managed PostgreSQL database in one step.
+#
+# To use: push this file (already at the repo root) to GitHub, then in the
+# Render dashboard choose "New +" -> "Blueprint" -> select this repo.
+# Render will read this file automatically and provision both services.
+#
+# NOTE ON BUILD STEP: no explicit buildCommand is set below. Render's native
+# "python" runtime automatically detects backend/requirements.txt and
+# installs those dependencies during the build phase by default -- this is
+# documented Render behavior, not something configured here.
+
+databases:
+  - name: coffee-crop-tour-db
+    plan: free
+    databaseName: coffee_crop_tour
+    user: ccttour_user
+
+services:
+  - type: web
+    name: coffee-crop-tour-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coffee-crop-tour-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "480"
+      - key: PHOTO_STORAGE_DIR
+        value: "./photo_storage"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://wawan3006.github.io"
+    healthCheckPath: /api/health
