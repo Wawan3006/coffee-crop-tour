@@ -1,0 +1,141 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "shared_commondataserviceforapps"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added_or_modified": {
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/entityname": "cct_survey",
+              "subscriptionRequest/scope": "Organization",
+              "subscriptionRequest/message": "Create,Update"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Initialize_gps_valid": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "gpsValid",
+                "type": "boolean",
+                "value": false
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "Check_Indonesia_bounding_box": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greaterOrEquals": [
+                  "@triggerOutputs()?['body/cct_latitude']",
+                  -11.5
+                ]
+              },
+              {
+                "lessOrEquals": [
+                  "@triggerOutputs()?['body/cct_latitude']",
+                  6.5
+                ]
+              },
+              {
+                "greaterOrEquals": [
+                  "@triggerOutputs()?['body/cct_longitude']",
+                  94.5
+                ]
+              },
+              {
+                "lessOrEquals": [
+                  "@triggerOutputs()?['body/cct_longitude']",
+                  141.5
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Set_gps_valid_true": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "gpsValid",
+                "value": true
+              },
+              "runAfter": {}
+            }
+          },
+          "else": {
+            "actions": {
+              "Set_gps_valid_false": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "gpsValid",
+                  "value": false
+                },
+                "runAfter": {}
+              }
+            }
+          },
+          "runAfter": {
+            "Initialize_gps_valid": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Update_survey_row_gps_valid_column": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "UpdateRecord",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "cct_surveys",
+              "recordId": "@triggerOutputs()?['body/cct_surveyid']",
+              "item/cct_gpsvalid": "@variables('gpsValid')"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runAfter": {
+            "Check_Indonesia_bounding_box": [
+              "Succeeded"
+            ]
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "displayName": "GPS-Validation",
+    "description": "Replaces analytics/validate_gps.py. Triggers on cct_survey create/update, checks lat/lon against Indonesia's bounding box (lat -11.5..6.5, lon 94.5..141.5 -- same numeric range as the Python backend it replaces), writes cct_gpsvalid."
+  },
+  "schemaVersion": "1.0.0.0"
+}

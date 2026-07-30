@@ -1,0 +1,809 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml version="9.2.0.0" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="coffee-crop-tour-migration-script">
+  <Entities>
+    <Entity>
+      <Name LocalizedName="Survey" OriginalName="Survey">cct_survey</Name>
+      <ObjectTypeCode>10000</ObjectTypeCode>
+      <EntityInfo>
+        <entity Name="cct_survey">
+          <LocalizedNames>
+            <LocalizedName languagecode="1033" description="Survey" />
+          </LocalizedNames>
+          <LocalizedCollectionNames>
+            <LocalizedCollectionName languagecode="1033" description="Surveys" />
+          </LocalizedCollectionNames>
+          <Descriptions>
+            <Description languagecode="1033" description="Coffee crop field survey records. Replaces the Python backend's surveys table (backend/models.py Survey class) with a native Dataverse table -- no FastAPI/SQLAlchemy required." />
+          </Descriptions>
+          <attributes>
+    <attribute PhysicalName="cct_surveyid">
+      <Type>nvarchar</Type>
+      <Name>cct_surveyid</Name>
+      <LogicalName>cct_surveyid</LogicalName>
+      <RequiredLevel>applicationrequired</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Survey ID" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Alternate key column (source QN.xlsx field: system-generated UUID). Enforces idempotent upsert natively, replacing backend/sync.py." />
+      </Descriptions>
+      <MaxLength>100</MaxLength>
+      <IsUniqueIndexed>1</IsUniqueIndexed>
+    </attribute>
+    <attribute PhysicalName="cct_sampleno">
+      <Type>nvarchar</Type>
+      <Name>cct_sampleno</Name>
+      <LogicalName>cct_sampleno</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Sample No." />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Sample No." />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_province">
+      <Type>picklist</Type>
+      <Name>cct_province</Name>
+      <LogicalName>cct_province</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Province" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Province" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_district">
+      <Type>nvarchar</Type>
+      <Name>cct_district</Name>
+      <LogicalName>cct_district</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="District" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: District" />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_farmerid">
+      <Type>nvarchar</Type>
+      <Name>cct_farmerid</Name>
+      <LogicalName>cct_farmerid</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Farmer ID" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: (added per user request)" />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_farmername">
+      <Type>nvarchar</Type>
+      <Name>cct_farmername</Name>
+      <LogicalName>cct_farmername</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Farmer Name" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Name" />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_farmerphno">
+      <Type>nvarchar</Type>
+      <Name>cct_farmerphno</Name>
+      <LogicalName>cct_farmerphno</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Farmer Phone" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Ph No." />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_farmernote">
+      <Type>nvarchar</Type>
+      <Name>cct_farmernote</Name>
+      <LogicalName>cct_farmernote</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Farmer Note" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Note" />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_totalcoffeeareahamar2025">
+      <Type>decimal</Type>
+      <Name>cct_totalcoffeeareahamar2025</Name>
+      <LogicalName>cct_totalcoffeeareahamar2025</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Total Coffee Area Ha Mar2025" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Total Coffee Area (Ha) Mar 2025" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_totalcoffeeareaha">
+      <Type>decimal</Type>
+      <Name>cct_totalcoffeeareaha</Name>
+      <LogicalName>cct_totalcoffeeareaha</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Total Coffee Area Ha" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Total Coffee Area (Ha)" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_additionaltreesha">
+      <Type>decimal</Type>
+      <Name>cct_additionaltreesha</Name>
+      <LogicalName>cct_additionaltreesha</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Additional/Expanding Trees Ha" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Additional/expanding trees/Ha" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_bearingha2024_25">
+      <Type>decimal</Type>
+      <Name>cct_bearingha2024_25</Name>
+      <LogicalName>cct_bearingha2024_25</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Bearing Area Ha 2024-25" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Bearing Area (ha) 2024-25" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_bearingha2025_26">
+      <Type>decimal</Type>
+      <Name>cct_bearingha2025_26</Name>
+      <LogicalName>cct_bearingha2025_26</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Bearing Area Ha 2025-26" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Bearing Area (ha) 2025-26" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_bearingha2026_27">
+      <Type>decimal</Type>
+      <Name>cct_bearingha2026_27</Name>
+      <LogicalName>cct_bearingha2026_27</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Bearing Area Ha 2026-27" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Bearing Area (ha) 2026-27" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_bearingha2027_28">
+      <Type>decimal</Type>
+      <Name>cct_bearingha2027_28</Name>
+      <LogicalName>cct_bearingha2027_28</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Bearing Area Ha 2027-28" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Bearing Area (ha) 2027-28" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_production2024_25q">
+      <Type>decimal</Type>
+      <Name>cct_production2024_25q</Name>
+      <LogicalName>cct_production2024_25q</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Production Quintals 2024-25" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Production (Quintals) 2024-25" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_production2025_26q">
+      <Type>decimal</Type>
+      <Name>cct_production2025_26q</Name>
+      <LogicalName>cct_production2025_26q</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Production Quintals 2025-26" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Production (Quintals) 2025-26" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_production2026_27q">
+      <Type>decimal</Type>
+      <Name>cct_production2026_27q</Name>
+      <LogicalName>cct_production2026_27q</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Production Quintals 2026-27" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Production (Quintals) 2026-27" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_production2027_28q">
+      <Type>decimal</Type>
+      <Name>cct_production2027_28q</Name>
+      <LogicalName>cct_production2027_28q</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Production Quintals 2027-28" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Production (Quintals) 2027-28" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_sellingnov25..dec26">
+      <Type>decimal</Type>
+      <Name>cct_sellingnov25..dec26</Name>
+      <LogicalName>cct_sellingnov25..dec26</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Selling (15 monthly cols)" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Selling Nov-25 ... Dec-26 + Undecided" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_actualstock2026_27q">
+      <Type>decimal</Type>
+      <Name>cct_actualstock2026_27q</Name>
+      <LogicalName>cct_actualstock2026_27q</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Actual Stock 2026-27 Quintal" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Actual stock 2026-27 (Quintal)" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_stockinregionpct">
+      <Type>decimal</Type>
+      <Name>cct_stockinregionpct</Name>
+      <LogicalName>cct_stockinregionpct</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Stock in Region %" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Stock in region (%)" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_flycropoutlook">
+      <Type>picklist</Type>
+      <Name>cct_flycropoutlook</Name>
+      <LogicalName>cct_flycropoutlook</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Fly Crop Outlook vs LY" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Fly Crop Outlook Compare to LY" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_maincropoutlook">
+      <Type>picklist</Type>
+      <Name>cct_maincropoutlook</Name>
+      <LogicalName>cct_maincropoutlook</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Main Crop Outlook vs LY" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Main Crop Outlook Compare to LY" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_maincropoutlookreason">
+      <Type>nvarchar</Type>
+      <Name>cct_maincropoutlookreason</Name>
+      <LogicalName>cct_maincropoutlookreason</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Main Crop Outlook Reason" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Reason" />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_rainfallblossom">
+      <Type>picklist</Type>
+      <Name>cct_rainfallblossom</Name>
+      <LogicalName>cct_rainfallblossom</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Rainfall at Blossom" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Rainfall (BN/N/AN/Ex) Blossom stage" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_rainfallfruitset">
+      <Type>picklist</Type>
+      <Name>cct_rainfallfruitset</Name>
+      <LogicalName>cct_rainfallfruitset</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Rainfall at Fruit Set" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Rainfall (BN/N/AN/Ex) Fruit Set stage" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_damagecode">
+      <Type>picklist</Type>
+      <Name>cct_damagecode</Name>
+      <LogicalName>cct_damagecode</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Damage Code" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Damage code 1-Blossom .. 8-No damage" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_farmgatepriceidr">
+      <Type>decimal</Type>
+      <Name>cct_farmgatepriceidr</Name>
+      <LogicalName>cct_farmgatepriceidr</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Farmgate Price IDR/Kg" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Price IDR/Kg" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_priceopinion">
+      <Type>nvarchar</Type>
+      <Name>cct_priceopinion</Name>
+      <LogicalName>cct_priceopinion</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Price Opinion" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Opinion" />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_futurepricecode">
+      <Type>picklist</Type>
+      <Name>cct_futurepricecode</Name>
+      <LogicalName>cct_futurepricecode</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Future Price Code" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Future price code" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_reactiontopricecode">
+      <Type>picklist</Type>
+      <Name>cct_reactiontopricecode</Name>
+      <LogicalName>cct_reactiontopricecode</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Reaction to Price Code" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Reaction to price codes" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_wages">
+      <Type>decimal</Type>
+      <Name>cct_wages</Name>
+      <LogicalName>cct_wages</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Wages" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Wages" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_herbicidetype">
+      <Type>nvarchar</Type>
+      <Name>cct_herbicidetype</Name>
+      <LogicalName>cct_herbicidetype</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Herbicide Type" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Herbicide type" />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_herbicidevolume">
+      <Type>decimal</Type>
+      <Name>cct_herbicidevolume</Name>
+      <LogicalName>cct_herbicidevolume</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Herbicide Volume" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Herbicide volume" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_npk2025">
+      <Type>decimal</Type>
+      <Name>cct_npk2025</Name>
+      <LogicalName>cct_npk2025</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="NPK Fertilizer 2025" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Fertilizer (NPK) 2025" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_urea2025">
+      <Type>decimal</Type>
+      <Name>cct_urea2025</Name>
+      <LogicalName>cct_urea2025</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Urea Fertilizer 2025" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Fertilizer (Urea) 2025" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_tsp2025">
+      <Type>decimal</Type>
+      <Name>cct_tsp2025</Name>
+      <LogicalName>cct_tsp2025</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="TSP Fertilizer 2025" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Fertilizer (TSP) 2025" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_npk2026">
+      <Type>decimal</Type>
+      <Name>cct_npk2026</Name>
+      <LogicalName>cct_npk2026</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="NPK Fertilizer 2026" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Fertilizer (NPK) 2026" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_urea2026">
+      <Type>decimal</Type>
+      <Name>cct_urea2026</Name>
+      <LogicalName>cct_urea2026</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Urea Fertilizer 2026" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Fertilizer (Urea) 2026" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_tsp2026">
+      <Type>decimal</Type>
+      <Name>cct_tsp2026</Name>
+      <LogicalName>cct_tsp2026</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="TSP Fertilizer 2026" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: Fertilizer (TSP) 2026" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_latitude">
+      <Type>decimal</Type>
+      <Name>cct_latitude</Name>
+      <LogicalName>cct_latitude</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Latitude" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: GPS auto-capture" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_longitude">
+      <Type>decimal</Type>
+      <Name>cct_longitude</Name>
+      <LogicalName>cct_longitude</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Longitude" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: GPS auto-capture" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_surveydate">
+      <Type>nvarchar</Type>
+      <Name>cct_surveydate</Name>
+      <LogicalName>cct_surveydate</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Survey Date" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: system field" />
+      </Descriptions>
+      <MaxLength>4000</MaxLength>
+    </attribute>
+    <attribute PhysicalName="cct_cropyear">
+      <Type>picklist</Type>
+      <Name>cct_cropyear</Name>
+      <LogicalName>cct_cropyear</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Crop Year" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: system field" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_syncstatus">
+      <Type>picklist</Type>
+      <Name>cct_syncstatus</Name>
+      <LogicalName>cct_syncstatus</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Sync Status" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: system field" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_dataqualitystatus">
+      <Type>picklist</Type>
+      <Name>cct_dataqualitystatus</Name>
+      <LogicalName>cct_dataqualitystatus</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Data Quality Status" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: computed by Power Automate flow" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_modelestimatekg">
+      <Type>decimal</Type>
+      <Name>cct_modelestimatekg</Name>
+      <LogicalName>cct_modelestimatekg</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Model Estimate Kg" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: computed by Power Automate flow" />
+      </Descriptions>
+      
+    </attribute>
+    <attribute PhysicalName="cct_agronomistadjustedestimatekg">
+      <Type>decimal</Type>
+      <Name>cct_agronomistadjustedestimatekg</Name>
+      <LogicalName>cct_agronomistadjustedestimatekg</LogicalName>
+      <RequiredLevel>none</RequiredLevel>
+      <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+      <ImeMode>auto</ImeMode>
+      <ValidForUpdateApi>1</ValidForUpdateApi>
+      <displaynames>
+        <displayname languagecode="1033" description="Agronomist Adjusted Estimate Kg" />
+      </displaynames>
+      <Descriptions>
+        <Description languagecode="1033" description="Source QN.xlsx field: manual adjustment field" />
+      </Descriptions>
+      
+    </attribute>
+          </attributes>
+        </entity>
+      </EntityInfo>
+    </Entity>
+  </Entities>
+</ImportExportXml>

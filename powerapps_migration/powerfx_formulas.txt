@@ -1,0 +1,151 @@
+=====================================================================
+Power Fx formulas for the Coffee Crop Tour canvas app.
+Paste these into the indicated property of the indicated control inside
+Power Apps Studio. These replace ALL Python logic with zero-code Dataverse
+operations + built-in Power Apps controls.
+=====================================================================
+
+--- App.OnStart (replaces sync.js + db.js initialization) ---
+Set(varCurrentCropYear, "2026/27");
+ClearCollect(colProvinces, Distinct(cct_farm, cct_province));
+LoadData(colDraftSurveys, "draft_surveys_cache", true);
+If(
+    IsBlank(colDraftSurveys),
+    ClearCollect(colDraftSurveys, [])
+);
+
+--- scrSurveyWizard_Location.btnCaptureGPS.OnSelect ---
+(replaces geo.js — uses the built-in Location object, no custom code)
+Set(
+    varGPS,
+    {
+        Latitude: Location.Latitude,
+        Longitude: Location.Longitude,
+        Accuracy: Location.Accuracy
+    }
+);
+Notify("GPS captured: " & varGPS.Latitude & ", " & varGPS.Longitude, NotificationType.Success)
+
+--- scrSurveyWizard_Photos.cameraFarmOverview.OnSelect ---
+(replaces survey-form.js photo capture + client-side compression)
+Collect(
+    colPhotos,
+    {
+        PhotoType: "Farm Overview",
+        Image: cameraFarmOverview.Photo,
+        CapturedAt: Now(),
+        Latitude: varGPS.Latitude,
+        Longitude: varGPS.Longitude
+    }
+)
+Note: Power Apps' Camera control auto-compresses on capture; no manual
+compression code (like the PWA's canvas-based compressAndStore()) is
+needed.
+
+--- scrSurveyWizard_Review.btnSubmit.OnSelect ---
+(replaces the entire /api/sync POST + idempotent upsert logic)
+If(
+    Connection.Connected,
+    // ONLINE: Patch directly into Dataverse. The Alternate Key on
+    // cct_surveyid makes this operation idempotent automatically --
+    // Dataverse either creates a new row or updates the existing one
+    // with the same survey_id. This is the exact replacement for
+    // backend/sync.py's upsert_survey() function, with zero code.
+    Patch(
+        cct_survey,
+        LookUp(cct_survey, cct_surveyid = varSurveyId),
+        {
+            cct_surveyid: varSurveyId,
+            cct_province: txtProvince.Text,
+            cct_district: txtDistrict.Text,
+            cct_farmerid: txtFarmerId.Text,
+            cct_farmername: txtFarmerName.Text,
+            cct_latitude: varGPS.Latitude,
+            cct_longitude: varGPS.Longitude,
+            cct_totalcoffeeareaha: Value(txtTotalCoffeeArea.Text),
+            cct_production2026_27q: Value(txtProduction.Text),
+            cct_flycropoutlook: dpdFlyCropOutlook.Selected.Value,
+            cct_surveydate: Today(),
+            cct_cropyear: varCurrentCropYear,
+            cct_syncstatus: "Synced"
+        }
+    );
+    ForAll(colPhotos, Patch(cct_photo, Defaults(cct_photo), {
+        cct_survey: LookUp(cct_survey, cct_surveyid = varSurveyId),
+        cct_phototype: ThisRecord.PhotoType,
+        cct_image: ThisRecord.Image
+    }));
+    Notify("Survey submitted and synced.", NotificationType.Success),
+
+    // OFFLINE: save to local collection, mark as Draft, retry later
+    Collect(
+        colDraftSurveys,
+        {
+            SurveyId: varSurveyId, Province: txtProvince.Text,
+            District: txtDistrict.Text, FarmerId: txtFarmerId.Text,
+            FarmerName: txtFarmerName.Text, Latitude: varGPS.Latitude,
+            Longitude: varGPS.Longitude,
+            TotalCoffeeAreaHa: Value(txtTotalCoffeeArea.Text),
+            Production: Value(txtProduction.Text),
+            SyncStatus: "Waiting for Sync"
+        }
+    );
+    SaveData(colDraftSurveys, "draft_surveys_cache");
+    Notify("No connection — survey saved as draft. Will sync when online.", NotificationType.Warning)
+)
+
+--- scrSyncStatus.btnSyncNow.OnSelect ---
+(replaces the "SYNC NOW" button + retry loop from sync.js)
+If(
+    Connection.Connected,
+    ForAll(
+        Filter(colDraftSurveys, SyncStatus = "Waiting for Sync"),
+        Patch(
+            cct_survey,
+            LookUp(cct_survey, cct_surveyid = SurveyId),
+            {
+                cct_surveyid: SurveyId, cct_province: Province,
+                cct_district: District, cct_farmerid: FarmerId,
+                cct_farmername: FarmerName, cct_latitude: Latitude,
+                cct_longitude: Longitude,
+                cct_totalcoffeeareaha: TotalCoffeeAreaHa,
+                cct_production2026_27q: Production,
+                cct_syncstatus: "Synced"
+            }
+        )
+    );
+    Clear(colDraftSurveys);
+    SaveData(colDraftSurveys, "draft_surveys_cache");
+    Notify("Sync complete.", NotificationType.Success),
+    Notify("Still offline — cannot sync now.", NotificationType.Error)
+)
+
+--- scrHome dashboard gallery (galSurveys.Items) ---
+(replaces GET /api/surveys with filters)
+SortByColumns(
+    Filter(
+        cct_survey,
+        (IsBlank(varFilterProvince) || cct_province = varFilterProvince) &&
+        (IsBlank(varFilterCropYear) || cct_cropyear = varFilterCropYear)
+    ),
+    "cct_surveydate",
+    Descending
+)
+
+--- scrHome KPI card (lblTotalFarms.Text) ---
+(replaces the aggregateSurveys() JS function)
+CountRows(
+    Filter(cct_survey, cct_cropyear = varCurrentCropYear)
+)
+
+--- scrHome KPI card (lblTotalHectares.Text) ---
+Sum(
+    Filter(cct_survey, cct_cropyear = varCurrentCropYear),
+    cct_totalcoffeeareaha
+)
+
+--- Role-based visibility example (Manager cannot edit) ---
+(replaces auth.js PERMISSIONS matrix -- combine with Dataverse security
+roles from the build guide; this is a UI-level convenience on top of the
+real server-side enforcement Dataverse security roles already provide)
+btnSubmit.Visible: User().Email in colFieldSurveyorEmails || User().Email in colAgronomistEmails

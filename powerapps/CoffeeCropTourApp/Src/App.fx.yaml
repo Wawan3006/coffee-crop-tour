@@ -1,0 +1,74 @@
+App:
+  Properties:
+    BackEnabled: =true
+    OnStart: |
+      =Set(varApiBaseUrl, "https://REPLACE_WITH_YOUR_DEPLOYED_HOST.example.com");
+      Set(varAuthToken, "");
+      Set(varCurrentUser, Blank());
+      Set(varCurrentUserRole, "");
+      Set(varDraftSurvey, {});
+      Set(varSampleNo, "");
+      Set(varProvince, "");
+      Set(varDistrict, "");
+      Set(varFarmerId, "");
+      Set(varFarmerName, "");
+      Set(varFarmerPhNo, "");
+      Set(varFarmerNote, "");
+      Set(varFarmerUpdateName, "");
+      Set(varFarmerUpdatePhoneNumber, "");
+      Set(varTotalCoffeeAreaHaMar2025, 0);
+      Set(varTotalCoffeeAreaHa, 0);
+      Set(varAdditionalExpandingTreesPerHa, 0);
+      Set(varAddBearing2025Ha, 0);
+      Set(varAddBearing2025Trees, 0);
+      Set(varAddBearing2026Ha, 0);
+      Set(varAddBearing2026Trees, 0);
+      Set(varBearingArea2024_25, 0);
+      Set(varBearingArea2025_26, 0);
+      Set(varBearingArea2026_27, 0);
+      Set(varBearingArea2027_28, 0);
+      Set(varProduction2024_25, 0);
+      Set(varProduction2025_26, 0);
+      Set(varProduction2026_27, 0);
+      Set(varProduction2027_28, 0);
+      Set(varSellingNov25, 0); Set(varSellingDec25, 0); Set(varSellingJan26, 0);
+      Set(varSellingFeb26, 0); Set(varSellingMar26, 0); Set(varSellingApr26, 0);
+      Set(varSellingMay26, 0); Set(varSellingJun26, 0); Set(varSellingJul26, 0);
+      Set(varSellingAug26, 0); Set(varSellingSep26, 0); Set(varSellingOct26, 0);
+      Set(varSellingNov26, 0); Set(varSellingDec26, 0); Set(varSellingUndecided, 0);
+      Set(varActualStock202627Quintal, 0);
+      Set(varStockRegionPct, 0);
+      Set(varFlyCropCompareToLY, "");
+      Set(varFlyHarvestNov26, 0); Set(varFlyHarvestDec26, 0); Set(varFlyHarvestJan27, 0); Set(varFlyHarvestFeb27, 0);
+      Set(varFlySellNov26, 0); Set(varFlySellDec26, 0); Set(varFlySellJan27, 0); Set(varFlySellFeb27, 0);
+      Set(varMainCropCompareToLY, "");
+      Set(varMainCropReason, "");
+      Set(varMainCropStartMonth, "");
+      Set(varPeakHarvestMonth, "");
+      Set(varRainfallBlossom, "");
+      Set(varRainfallFruitSet, "");
+      Set(varDevBlossom, "");
+      Set(varDevFruitSet, "");
+      Set(varDamage, "");
+      Set(varRainsAtOpeningBlossom, false);
+      Set(varAvgPriceSold2025_26, 0);
+      Set(varExistingPrice, 0);
+      Set(varExpectedPrice, 0);
+      Set(varOpinionCurrentPrice, "");
+      Set(varFuturePrice, "");
+      Set(varReactionHigherPrice, "");
+      Set(varLaborWage2025, 0);
+      Set(varLaborWage2026, 0);
+      Set(varHerbicideType, "");
+      Set(varHerbicideLitersPerYear, 0);
+      Set(varNpk2025, 0); Set(varNpk2026, 0);
+      Set(varUrea2025, 0); Set(varUrea2026, 0);
+      Set(varTsp2025, 0); Set(varTsp2026, 0);
+      Set(varGpsLat, Blank());
+      Set(varGpsLon, Blank());
+      Set(varGpsAccuracyM, Blank());
+      Set(varSurveyStatus, "draft");
+      Navigate(scr_Login, ScreenTransition.None)
+  Children:
+  - AppTestPlan:
+      Control: AppTest

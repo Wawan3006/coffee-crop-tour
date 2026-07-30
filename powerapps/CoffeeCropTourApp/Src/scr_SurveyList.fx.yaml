@@ -1,0 +1,59 @@
+scr_SurveyList As screen:
+  Fill: =RGBA(245, 242, 238, 1)
+  OnVisible: |
+    =Set(
+      varSurveysCollection,
+      CoffeeCropTourAPI.list_surveys_api_surveys_get({}, { Authorization: varAuthToken })
+    )
+  Children:
+  - lbl_Header As label:
+      Text: ="All Surveys (" & CountRows(varSurveysCollection) & ")"
+      X: =20
+      Y: =20
+      Width: =Parent.Width - 40
+      Height: =36
+      FontWeight: =FontWeight.Bold
+      Size: =18
+      Color: =RGBA(74, 51, 35, 1)
+
+  - gal_Surveys As gallery.Vertical:
+      Items: =SortByColumns(varSurveysCollection, "survey_date", Descending)
+      X: =20
+      Y: =70
+      Width: =Parent.Width - 40
+      Height: =Parent.Height - 90
+      TemplateSize: =80
+      Children:
+      - lbl_FarmerId As label:
+          Text: =ThisItem.farmer_id & " — " & ThisItem.province
+          X: =10
+          Y: =10
+          Width: =Parent.TemplateWidth - 120
+          Height: =28
+          FontWeight: =FontWeight.Bold
+          Size: =14
+      - lbl_Meta As label:
+          Text: =ThisItem.survey_date & " · " & ThisItem.data_quality_status
+          X: =10
+          Y: =40
+          Width: =Parent.TemplateWidth - 120
+          Height: =24
+          Size: =11
+          Color: =RGBA(122, 111, 99, 1)
+      - lbl_SyncStatus As label:
+          Text: =ThisItem.sync_status
+          X: =Parent.TemplateWidth - 100
+          Y: =24
+          Width: =90
+          Height: =30
+          Size: =11
+          FontWeight: =FontWeight.Semibold
+          Align: =Align.Right
+          Color: |
+            =Switch(
+              ThisItem.sync_status,
+              "SYNCED", RGBA(46, 125, 50, 1),
+              "PENDING_SYNC", RGBA(230, 81, 0, 1),
+              "SYNC_ERROR", RGBA(211, 47, 47, 1),
+              RGBA(122, 111, 99, 1)
+            )

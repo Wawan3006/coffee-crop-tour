@@ -1,0 +1,119 @@
+# Step 3 of 14: Additional Bearing (QN.xlsx columns L-O)
+# Fields: addBearing2025Ha, addBearing2025Trees, addBearing2026Ha, addBearing2026Trees
+scr_Step3_AdditionalBearing As screen:
+  Fill: =RGBA(245, 242, 238, 1)
+  Children:
+  - lbl_StepHeader As label:
+      Text: ="Step 3 / 14 — Additional Bearing"
+      X: =20
+      Y: =20
+      Width: =Parent.Width - 40
+      Height: =36
+      FontWeight: =FontWeight.Bold
+      Size: =18
+      Color: =RGBA(74, 51, 35, 1)
+  - rect_ProgressTrack As rectangle:
+      Fill: =RGBA(226, 220, 211, 1)
+      X: =20
+      Y: =62
+      Width: =Parent.Width - 40
+      Height: =6
+  - rect_ProgressFill As rectangle:
+      Fill: =RGBA(111, 78, 55, 1)
+      X: =20
+      Y: =62
+      Width: =(Parent.Width - 40) * (3/14)
+      Height: =6
+
+  - lbl_AddBearing2025Ha As label:
+      Text: ="Additional Bearing 2025 (Ha)"
+      X: =20
+      Y: =90
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - num_AddBearing2025Ha As text input.TextInput:
+      Default: =Text(varAddBearing2025Ha)
+      Format: =TextFormat.Number
+      X: =20
+      Y: =114
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varAddBearing2025Ha, Value(num_AddBearing2025Ha.Text))
+
+  - lbl_AddBearing2025Trees As label:
+      Text: ="Additional Bearing 2025 (Trees)"
+      X: =20
+      Y: =170
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - num_AddBearing2025Trees As text input.TextInput:
+      Default: =Text(varAddBearing2025Trees)
+      Format: =TextFormat.Number
+      X: =20
+      Y: =194
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varAddBearing2025Trees, Value(num_AddBearing2025Trees.Text))
+
+  - lbl_AddBearing2026Ha As label:
+      Text: ="Additional Bearing 2026 (Ha)"
+      X: =20
+      Y: =250
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - num_AddBearing2026Ha As text input.TextInput:
+      Default: =Text(varAddBearing2026Ha)
+      Format: =TextFormat.Number
+      X: =20
+      Y: =274
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varAddBearing2026Ha, Value(num_AddBearing2026Ha.Text))
+
+  - lbl_AddBearing2026Trees As label:
+      Text: ="Additional Bearing 2026 (Trees)"
+      X: =20
+      Y: =330
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - num_AddBearing2026Trees As text input.TextInput:
+      Default: =Text(varAddBearing2026Trees)
+      Format: =TextFormat.Number
+      X: =20
+      Y: =354
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varAddBearing2026Trees, Value(num_AddBearing2026Trees.Text))
+
+  - btn_Prev As button:
+      Text: ="◀ Previous"
+      X: =20
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(255, 255, 255, 1)
+      Color: =RGBA(74, 51, 35, 1)
+      BorderColor: =RGBA(111, 78, 55, 1)
+      BorderThickness: =1.5
+      OnSelect: |
+        =Navigate(scr_Step2_CoffeeArea, ScreenTransition.CoverRight)
+
+  - btn_Next As button:
+      Text: ="Next ▶"
+      X: =Parent.Width/2 + 10
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(111, 78, 55, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Bold
+      OnSelect: |
+        =Navigate(scr_Step4_BearingArea, ScreenTransition.Cover)

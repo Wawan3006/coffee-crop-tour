@@ -1,0 +1,121 @@
+# Step 9 of 14: Main Crop Outlook (QN.xlsx columns AX-BA)
+scr_Step9_MainCropOutlook As screen:
+  Fill: =RGBA(245, 242, 238, 1)
+  Children:
+  - lbl_StepHeader As label:
+      Text: ="Step 9 / 14 — Main Crop Outlook"
+      X: =20
+      Y: =20
+      Width: =Parent.Width - 40
+      Height: =36
+      FontWeight: =FontWeight.Bold
+      Size: =18
+      Color: =RGBA(74, 51, 35, 1)
+  - rect_ProgressTrack As rectangle:
+      Fill: =RGBA(226, 220, 211, 1)
+      X: =20
+      Y: =62
+      Width: =Parent.Width - 40
+      Height: =6
+  - rect_ProgressFill As rectangle:
+      Fill: =RGBA(111, 78, 55, 1)
+      X: =20
+      Y: =62
+      Width: =(Parent.Width - 40) * (9/14)
+      Height: =6
+
+  - lbl_MainCropCompareToLY As label:
+      Text: ="Main crop compare to LY"
+      X: =20
+      Y: =90
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - drp_MainCropCompareToLY As drop down:
+      Items: |
+        =["1 - Early", "2 - Same", "3 - Late"]
+      Default: =varMainCropCompareToLY
+      X: =20
+      Y: =114
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varMainCropCompareToLY, drp_MainCropCompareToLY.Selected.Value)
+
+  - lbl_MainCropReason As label:
+      Text: ="Reason"
+      X: =20
+      Y: =170
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - txt_MainCropReason As text input.TextInput:
+      Default: =varMainCropReason
+      Mode: =TextMode.MultiLine
+      X: =20
+      Y: =194
+      Width: =Parent.Width - 40
+      Height: =70
+      OnChange: |
+        =Set(varMainCropReason, txt_MainCropReason.Text)
+
+  - lbl_MainCropStartMonth As label:
+      Text: ="Start month"
+      X: =20
+      Y: =274
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - drp_MainCropStartMonth As drop down:
+      Items: |
+        =["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+      Default: =varMainCropStartMonth
+      X: =20
+      Y: =298
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varMainCropStartMonth, drp_MainCropStartMonth.Selected.Value)
+
+  - lbl_PeakHarvestMonth As label:
+      Text: ="Peak harvest month"
+      X: =20
+      Y: =354
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - drp_PeakHarvestMonth As drop down:
+      Items: |
+        =["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+      Default: =varPeakHarvestMonth
+      X: =20
+      Y: =378
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varPeakHarvestMonth, drp_PeakHarvestMonth.Selected.Value)
+
+  - btn_Prev As button:
+      Text: ="◀ Previous"
+      X: =20
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(255, 255, 255, 1)
+      Color: =RGBA(74, 51, 35, 1)
+      BorderColor: =RGBA(111, 78, 55, 1)
+      BorderThickness: =1.5
+      OnSelect: |
+        =Navigate(scr_Step8_FlyCropVolumes, ScreenTransition.CoverRight)
+
+  - btn_Next As button:
+      Text: ="Next ▶"
+      X: =Parent.Width/2 + 10
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(111, 78, 55, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Bold
+      OnSelect: |
+        =Navigate(scr_Step10_WeatherDevelopment, ScreenTransition.Cover)

@@ -1,0 +1,229 @@
+# Step 12 of 14: Labor & Inputs (QN.xlsx columns BN-BW)
+scr_Step12_LaborInputs As screen:
+  Fill: =RGBA(245, 242, 238, 1)
+  Children:
+  - lbl_StepHeader As label:
+      Text: ="Step 12 / 14 — Labor & Inputs"
+      X: =20
+      Y: =20
+      Width: =Parent.Width - 40
+      Height: =36
+      FontWeight: =FontWeight.Bold
+      Size: =18
+      Color: =RGBA(74, 51, 35, 1)
+  - rect_ProgressTrack As rectangle:
+      Fill: =RGBA(226, 220, 211, 1)
+      X: =20
+      Y: =62
+      Width: =Parent.Width - 40
+      Height: =6
+  - rect_ProgressFill As rectangle:
+      Fill: =RGBA(111, 78, 55, 1)
+      X: =20
+      Y: =62
+      Width: =(Parent.Width - 40) * (12/14)
+      Height: =6
+
+  - lbl_LaborWage2025 As label:
+      Text: ="Labor wage 2025 (IDR/day)"
+      X: =20
+      Y: =90
+      Width: =(Parent.Width - 60)/2
+      Height: =24
+      Size: =11
+  - num_LaborWage2025 As text input.TextInput:
+      Default: =Text(varLaborWage2025)
+      Format: =TextFormat.Number
+      X: =20
+      Y: =114
+      Width: =(Parent.Width - 60)/2
+      Height: =46
+      OnChange: |
+        =Set(varLaborWage2025, Value(num_LaborWage2025.Text))
+
+  - lbl_LaborWage2026 As label:
+      Text: ="Labor wage 2026 (IDR/day)"
+      X: =Parent.Width/2 + 10
+      Y: =90
+      Width: =(Parent.Width - 60)/2
+      Height: =24
+      Size: =11
+  - num_LaborWage2026 As text input.TextInput:
+      Default: =Text(varLaborWage2026)
+      Format: =TextFormat.Number
+      X: =Parent.Width/2 + 10
+      Y: =114
+      Width: =(Parent.Width - 60)/2
+      Height: =46
+      OnChange: |
+        =Set(varLaborWage2026, Value(num_LaborWage2026.Text))
+
+  - lbl_HerbicideType As label:
+      Text: ="Herbicide type"
+      X: =20
+      Y: =174
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - txt_HerbicideType As text input.TextInput:
+      Default: =varHerbicideType
+      X: =20
+      Y: =198
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varHerbicideType, txt_HerbicideType.Text)
+
+  - lbl_HerbicideLiters As label:
+      Text: ="Herbicide (liters/year)"
+      X: =20
+      Y: =254
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - num_HerbicideLiters As text input.TextInput:
+      Default: =Text(varHerbicideLitersPerYear)
+      Format: =TextFormat.Number
+      X: =20
+      Y: =278
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varHerbicideLitersPerYear, Value(num_HerbicideLiters.Text))
+
+  - lbl_FertilizerSection As label:
+      Text: ="Fertilizer (kg/year)"
+      X: =20
+      Y: =336
+      Width: =Parent.Width - 40
+      Height: =28
+      FontWeight: =FontWeight.Semibold
+      Size: =14
+      Color: =RGBA(74, 51, 35, 1)
+
+  - lbl_Npk2025 As label:
+      Text: ="NPK 2025"
+      X: =20
+      Y: =372
+      Width: =(Parent.Width - 60)/2
+      Height: =24
+      Size: =11
+  - num_Npk2025 As text input.TextInput:
+      Default: =Text(varNpk2025)
+      Format: =TextFormat.Number
+      X: =20
+      Y: =396
+      Width: =(Parent.Width - 60)/2
+      Height: =46
+      OnChange: |
+        =Set(varNpk2025, Value(num_Npk2025.Text))
+
+  - lbl_Npk2026 As label:
+      Text: ="NPK 2026"
+      X: =Parent.Width/2 + 10
+      Y: =372
+      Width: =(Parent.Width - 60)/2
+      Height: =24
+      Size: =11
+  - num_Npk2026 As text input.TextInput:
+      Default: =Text(varNpk2026)
+      Format: =TextFormat.Number
+      X: =Parent.Width/2 + 10
+      Y: =396
+      Width: =(Parent.Width - 60)/2
+      Height: =46
+      OnChange: |
+        =Set(varNpk2026, Value(num_Npk2026.Text))
+
+  - lbl_Urea2025 As label:
+      Text: ="Urea 2025"
+      X: =20
+      Y: =452
+      Width: =(Parent.Width - 60)/2
+      Height: =24
+      Size: =11
+  - num_Urea2025 As text input.TextInput:
+      Default: =Text(varUrea2025)
+      Format: =TextFormat.Number
+      X: =20
+      Y: =476
+      Width: =(Parent.Width - 60)/2
+      Height: =46
+      OnChange: |
+        =Set(varUrea2025, Value(num_Urea2025.Text))
+
+  - lbl_Urea2026 As label:
+      Text: ="Urea 2026"
+      X: =Parent.Width/2 + 10
+      Y: =452
+      Width: =(Parent.Width - 60)/2
+      Height: =24
+      Size: =11
+  - num_Urea2026 As text input.TextInput:
+      Default: =Text(varUrea2026)
+      Format: =TextFormat.Number
+      X: =Parent.Width/2 + 10
+      Y: =476
+      Width: =(Parent.Width - 60)/2
+      Height: =46
+      OnChange: |
+        =Set(varUrea2026, Value(num_Urea2026.Text))
+
+  - lbl_Tsp2025 As label:
+      Text: ="TSP 2025"
+      X: =20
+      Y: =532
+      Width: =(Parent.Width - 60)/2
+      Height: =24
+      Size: =11
+  - num_Tsp2025 As text input.TextInput:
+      Default: =Text(varTsp2025)
+      Format: =TextFormat.Number
+      X: =20
+      Y: =556
+      Width: =(Parent.Width - 60)/2
+      Height: =46
+      OnChange: |
+        =Set(varTsp2025, Value(num_Tsp2025.Text))
+
+  - lbl_Tsp2026 As label:
+      Text: ="TSP 2026"
+      X: =Parent.Width/2 + 10
+      Y: =532
+      Width: =(Parent.Width - 60)/2
+      Height: =24
+      Size: =11
+  - num_Tsp2026 As text input.TextInput:
+      Default: =Text(varTsp2026)
+      Format: =TextFormat.Number
+      X: =Parent.Width/2 + 10
+      Y: =556
+      Width: =(Parent.Width - 60)/2
+      Height: =46
+      OnChange: |
+        =Set(varTsp2026, Value(num_Tsp2026.Text))
+
+  - btn_Prev As button:
+      Text: ="◀ Previous"
+      X: =20
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(255, 255, 255, 1)
+      Color: =RGBA(74, 51, 35, 1)
+      BorderColor: =RGBA(111, 78, 55, 1)
+      BorderThickness: =1.5
+      OnSelect: |
+        =Navigate(scr_Step11_PriceOfCoffee, ScreenTransition.CoverRight)
+
+  - btn_Next As button:
+      Text: ="Next ▶"
+      X: =Parent.Width/2 + 10
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(111, 78, 55, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Bold
+      OnSelect: |
+        =Navigate(scr_Step13_Photos, ScreenTransition.Cover)

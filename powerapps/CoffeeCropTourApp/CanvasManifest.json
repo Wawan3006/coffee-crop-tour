@@ -1,0 +1,49 @@
+{
+  "FormatVersion": "2.2",
+  "PublishTarget": "release",
+  "AppName": "CoffeeCropTourApp",
+  "AppID": "coffee-crop-tour-canvas-app",
+  "DocumentType": "Canvas",
+  "Screens": [
+    "App",
+    "scr_Login",
+    "scr_HomeDashboard",
+    "scr_Step1_SampleFarmer",
+    "scr_Step2_CoffeeArea",
+    "scr_Step3_AdditionalBearing",
+    "scr_Step4_BearingArea",
+    "scr_Step5_Production",
+    "scr_Step6_Selling",
+    "scr_Step7_StockFlyOutlook",
+    "scr_Step8_FlyCropVolumes",
+    "scr_Step9_MainCropOutlook",
+    "scr_Step10_WeatherDevelopment",
+    "scr_Step11_PriceOfCoffee",
+    "scr_Step12_LaborInputs",
+    "scr_Step13_Photos",
+    "scr_Step14_Review",
+    "scr_SurveyList"
+  ],
+  "ConnectionReferences": {
+    "CoffeeCropTourAPI": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_coffeecroptourapi",
+      "source": "Embedded",
+      "displayName": "Coffee Crop Tour API",
+      "description": "Custom connector generated from the FastAPI backend's live OpenAPI schema (backend/powerapps_connector.swagger.json, 14/14 endpoint tests passing). Import that Swagger file as a Custom Connector FIRST, then bind this reference to it inside Power Apps Studio.",
+      "connectionParameters": {
+        "Authorization": {
+          "type": "securestring"
+        }
+      }
+    }
+  },
+  "Dependencies": {
+    "RequiredConnectors": [
+      "CoffeeCropTourAPI (import backend/powerapps_connector.swagger.json as a Custom Connector first)"
+    ],
+    "NativeCapabilities": [
+      "Camera",
+      "Location"
+    ]
+  }
+}

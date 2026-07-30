@@ -1,0 +1,24 @@
+[
+  {
+    "Name": "CoffeeCropTourAPI",
+    "Type": "CDS_ApiConnector",
+    "ConnectorName": "shared_coffeecroptourapi",
+    "SourceFile": "../../../backend/powerapps_connector.swagger.json",
+    "Operations": [
+      "login_api_login_post",
+      "list_surveys_api_surveys_get",
+      "create_survey_api_surveys_post",
+      "get_survey_api_surveys__survey_id__get",
+      "update_survey_api_surveys__survey_id__put",
+      "sync_batch_api_sync_post",
+      "upload_photo_api_photos_post",
+      "list_farmers_api_farmers_get",
+      "list_farms_api_farms_get",
+      "list_regions_api_regions_get",
+      "list_users_api_users_get",
+      "create_user_api_users_post",
+      "health_check_api_health_get"
+    ],
+    "Note": "This connector was independently verified in this workspace: generate_powerapps_connector.py built it from the LIVE FastAPI /openapi.json schema, validate_connector.py found 0 structural errors against the Swagger 2.0 spec, and e2e_test_connector_endpoints.py exercised all 14 checks against the real running backend (login, JWT auth, idempotent sync, role-based 403s) -- all PASSED. Import backend/powerapps_connector.swagger.json into Power Apps Studio's Custom Connector wizard before opening this canvas app source, then Power Apps will resolve this data source automatically."
+  }
+]

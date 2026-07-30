@@ -1,0 +1,156 @@
+# Step 10 of 14: Weather & Crop Development (QN.xlsx columns BB-BG)
+scr_Step10_WeatherDevelopment As screen:
+  Fill: =RGBA(245, 242, 238, 1)
+  Children:
+  - lbl_StepHeader As label:
+      Text: ="Step 10 / 14 — Weather & Crop Development"
+      X: =20
+      Y: =20
+      Width: =Parent.Width - 40
+      Height: =36
+      FontWeight: =FontWeight.Bold
+      Size: =16
+      Color: =RGBA(74, 51, 35, 1)
+  - rect_ProgressTrack As rectangle:
+      Fill: =RGBA(226, 220, 211, 1)
+      X: =20
+      Y: =62
+      Width: =Parent.Width - 40
+      Height: =6
+  - rect_ProgressFill As rectangle:
+      Fill: =RGBA(111, 78, 55, 1)
+      X: =20
+      Y: =62
+      Width: =(Parent.Width - 40) * (10/14)
+      Height: =6
+
+  - lbl_RainfallBlossom As label:
+      Text: ="Rainfall at Blossom (BN/N/AN/Ex)"
+      X: =20
+      Y: =90
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - drp_RainfallBlossom As drop down:
+      Items: =["BN","N","AN","Ex"]
+      Default: =varRainfallBlossom
+      X: =20
+      Y: =114
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varRainfallBlossom, drp_RainfallBlossom.Selected.Value)
+
+  - lbl_RainfallFruitSet As label:
+      Text: ="Rainfall at Fruit Set (BN/N/AN/Ex)"
+      X: =20
+      Y: =170
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - drp_RainfallFruitSet As drop down:
+      Items: =["BN","N","AN","Ex"]
+      Default: =varRainfallFruitSet
+      X: =20
+      Y: =194
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varRainfallFruitSet, drp_RainfallFruitSet.Selected.Value)
+
+  - lbl_DevBlossom As label:
+      Text: ="Crop development — Blossom"
+      X: =20
+      Y: =250
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - txt_DevBlossom As text input.TextInput:
+      Default: =varDevBlossom
+      X: =20
+      Y: =274
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varDevBlossom, txt_DevBlossom.Text)
+
+  - lbl_DevFruitSet As label:
+      Text: ="Crop development — Fruit Set"
+      X: =20
+      Y: =330
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - txt_DevFruitSet As text input.TextInput:
+      Default: =varDevFruitSet
+      X: =20
+      Y: =354
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varDevFruitSet, txt_DevFruitSet.Text)
+
+  - lbl_Damage As label:
+      Text: ="Damage code (1-Blossom .. 8-No damage)"
+      X: =20
+      Y: =410
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+  - drp_Damage As drop down:
+      Items: |
+        =[
+          "1 - Blossom", "2 - Fruit set", "3 - 1 and 2", "4 - Cherry development",
+          "5 - 2 and 4", "6 - 1 and 4", "7 - All 3 stages", "8 - No damage"
+        ]
+      Default: =varDamage
+      X: =20
+      Y: =434
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varDamage, drp_Damage.Selected.Value)
+
+  - lbl_RainsAtOpeningBlossom As label:
+      Text: ="Rains at opening blossom?"
+      X: =20
+      Y: =494
+      Width: =Parent.Width - 140
+      Height: =46
+      Size: =12
+      VerticalAlign: =VerticalAlign.Middle
+  - tgl_RainsAtOpeningBlossom As toggle:
+      Default: =varRainsAtOpeningBlossom
+      X: =Parent.Width - 100
+      Y: =494
+      Width: =80
+      Height: =46
+      OnCheck: |
+        =Set(varRainsAtOpeningBlossom, true)
+      OnUncheck: |
+        =Set(varRainsAtOpeningBlossom, false)
+
+  - btn_Prev As button:
+      Text: ="◀ Previous"
+      X: =20
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(255, 255, 255, 1)
+      Color: =RGBA(74, 51, 35, 1)
+      BorderColor: =RGBA(111, 78, 55, 1)
+      BorderThickness: =1.5
+      OnSelect: |
+        =Navigate(scr_Step9_MainCropOutlook, ScreenTransition.CoverRight)
+
+  - btn_Next As button:
+      Text: ="Next ▶"
+      X: =Parent.Width/2 + 10
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(111, 78, 55, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Bold
+      OnSelect: |
+        =Navigate(scr_Step11_PriceOfCoffee, ScreenTransition.Cover)

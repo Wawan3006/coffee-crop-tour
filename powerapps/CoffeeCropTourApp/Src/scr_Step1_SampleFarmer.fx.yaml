@@ -1,0 +1,199 @@
+# Step 1 of 14: Sample & Farmer (QN.xlsx columns A-H)
+# Real field mapping, matching js/survey-form.js blankSurvey() exactly:
+#   sampleNo, province, district, farmerId, farmerName, farmerPhNo, farmerNote,
+#   farmerUpdateName, farmerUpdatePhoneNumber
+scr_Step1_SampleFarmer As screen:
+  Fill: =RGBA(245, 242, 238, 1)
+  Children:
+  - lbl_StepHeader As label:
+      Text: ="Step 1 / 14 — Sample & Farmer"
+      X: =20
+      Y: =20
+      Width: =Parent.Width - 40
+      Height: =36
+      FontWeight: =FontWeight.Bold
+      Size: =18
+      Color: =RGBA(74, 51, 35, 1)
+
+  - rect_ProgressTrack As rectangle:
+      Fill: =RGBA(226, 220, 211, 1)
+      X: =20
+      Y: =62
+      Width: =Parent.Width - 40
+      Height: =6
+      RadiusTopLeft: =3
+      RadiusTopRight: =3
+      RadiusBottomLeft: =3
+      RadiusBottomRight: =3
+  - rect_ProgressFill As rectangle:
+      Fill: =RGBA(111, 78, 55, 1)
+      X: =20
+      Y: =62
+      Width: =(Parent.Width - 40) * (1/14)
+      Height: =6
+      RadiusTopLeft: =3
+      RadiusTopRight: =3
+      RadiusBottomLeft: =3
+      RadiusBottomRight: =3
+
+  - lbl_SampleNo As label:
+      Text: ="Sample No."
+      X: =20
+      Y: =90
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+      Color: =RGBA(122, 111, 99, 1)
+  - txt_SampleNo As text input.TextInput:
+      Default: =varSampleNo
+      X: =20
+      Y: =114
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varSampleNo, txt_SampleNo.Text)
+
+  - lbl_Province As label:
+      Text: ="Province"
+      X: =20
+      Y: =170
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+      Color: =RGBA(122, 111, 99, 1)
+  - drp_Province As drop down:
+      Items: |
+        =[
+          "Aceh","North Sumatra","Lampung","South Sumatra","Bengkulu","Jambi",
+          "West Java","Central Java","East Java","Bali","West Nusa Tenggara",
+          "East Nusa Tenggara","South Sulawesi"
+        ]
+      Default: =varProvince
+      X: =20
+      Y: =194
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varProvince, drp_Province.Selected.Value)
+
+  - lbl_District As label:
+      Text: ="District"
+      X: =20
+      Y: =250
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+      Color: =RGBA(122, 111, 99, 1)
+  - txt_District As text input.TextInput:
+      Default: =varDistrict
+      X: =20
+      Y: =274
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varDistrict, txt_District.Text)
+
+  - lbl_SectionFarmer As label:
+      Text: ="Farmer"
+      X: =20
+      Y: =334
+      Width: =Parent.Width - 40
+      Height: =30
+      FontWeight: =FontWeight.Bold
+      Size: =14
+      Color: =RGBA(74, 51, 35, 1)
+
+  - lbl_FarmerId As label:
+      Text: ="Farmer ID"
+      X: =20
+      Y: =370
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+      Color: =RGBA(122, 111, 99, 1)
+  - txt_FarmerId As text input.TextInput:
+      Default: =varFarmerId
+      X: =20
+      Y: =394
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varFarmerId, txt_FarmerId.Text)
+
+  - lbl_FarmerName As label:
+      Text: ="Name"
+      X: =20
+      Y: =450
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+      Color: =RGBA(122, 111, 99, 1)
+  - txt_FarmerName As text input.TextInput:
+      Default: =varFarmerName
+      X: =20
+      Y: =474
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varFarmerName, txt_FarmerName.Text)
+
+  - lbl_FarmerPhNo As label:
+      Text: ="Ph No."
+      X: =20
+      Y: =530
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+      Color: =RGBA(122, 111, 99, 1)
+  - txt_FarmerPhNo As text input.TextInput:
+      Default: =varFarmerPhNo
+      Format: =TextFormat.Text
+      X: =20
+      Y: =554
+      Width: =Parent.Width - 40
+      Height: =46
+      OnChange: |
+        =Set(varFarmerPhNo, txt_FarmerPhNo.Text)
+
+  - lbl_FarmerNote As label:
+      Text: ="Note"
+      X: =20
+      Y: =610
+      Width: =Parent.Width - 40
+      Height: =24
+      Size: =12
+      Color: =RGBA(122, 111, 99, 1)
+  - txt_FarmerNote As text input.TextInput:
+      Default: =varFarmerNote
+      Mode: =TextMode.MultiLine
+      X: =20
+      Y: =634
+      Width: =Parent.Width - 40
+      Height: =70
+      OnChange: |
+        =Set(varFarmerNote, txt_FarmerNote.Text)
+
+  - btn_SaveDraft As button:
+      Text: ="Save Draft"
+      X: =20
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(255, 255, 255, 1)
+      Color: =RGBA(74, 51, 35, 1)
+      BorderColor: =RGBA(111, 78, 55, 1)
+      BorderThickness: =1.5
+      OnSelect: |
+        =Notify("Draft saved locally in this session.", NotificationType.Information)
+
+  - btn_Next As button:
+      Text: ="Next ▶"
+      X: =Parent.Width/2 + 10
+      Y: =Parent.Height - 70
+      Width: =(Parent.Width - 60) / 2
+      Height: =50
+      Fill: =RGBA(111, 78, 55, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Bold
+      OnSelect: |
+        =Navigate(scr_Step2_CoffeeArea, ScreenTransition.Cover)

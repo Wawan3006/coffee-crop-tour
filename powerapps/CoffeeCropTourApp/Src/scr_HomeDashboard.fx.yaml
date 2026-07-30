@@ -1,0 +1,163 @@
+scr_HomeDashboard As screen:
+  Fill: =RGBA(245, 242, 238, 1)
+  OnVisible: |
+    =Set(
+      varSurveysCollection,
+      CoffeeCropTourAPI.list_surveys_api_surveys_get({}, { Authorization: varAuthToken })
+    );
+    Set(varTodaySurveyCount, CountRows(Filter(varSurveysCollection, Text(survey_date, "yyyy-mm-dd") = Text(Today(), "yyyy-mm-dd"))));
+    Set(varSyncedCount, CountRows(Filter(varSurveysCollection, sync_status = "SYNCED")));
+    Set(varWaitingCount, CountRows(Filter(varSurveysCollection, sync_status = "PENDING_SYNC")));
+    Set(varSyncErrorCount, CountRows(Filter(varSurveysCollection, sync_status = "SYNC_ERROR")))
+  Children:
+  - hdr_Bar As rectangle:
+      Fill: =RGBA(111, 78, 55, 1)
+      X: =0
+      Y: =0
+      Width: =Parent.Width
+      Height: =70
+
+  - lbl_HeaderTitle As label:
+      Text: ="☕ Coffee Crop Tour"
+      X: =20
+      Y: =15
+      Width: =300
+      Height: =40
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Bold
+      Size: =18
+
+  - lbl_HeaderUser As label:
+      Text: =varCurrentUser.full_name & " · " & varCurrentUserRole
+      X: =Parent.Width - 340
+      Y: =20
+      Width: =320
+      Height: =30
+      Color: =RGBA(255, 255, 255, 1)
+      Size: =12
+      Align: =Align.Right
+
+  - gal_KPICards As gallery.Horizontal:
+      Items: |
+        =[
+          { Label: "Today's Surveys", Value: Text(varTodaySurveyCount) },
+          { Label: "Synced", Value: Text(varSyncedCount) },
+          { Label: "Waiting to Sync", Value: Text(varWaitingCount) },
+          { Label: "Sync Error", Value: Text(varSyncErrorCount) }
+        ]
+      X: =20
+      Y: =90
+      Width: =Parent.Width - 40
+      Height: =110
+      TemplateSize: =180
+      Children:
+      - rect_KPICard As rectangle:
+          Fill: =RGBA(255, 255, 255, 1)
+          BorderColor: =RGBA(226, 220, 211, 1)
+          BorderThickness: =1
+          RadiusTopLeft: =12
+          RadiusTopRight: =12
+          RadiusBottomLeft: =12
+          RadiusBottomRight: =12
+          X: =0
+          Y: =0
+          Width: =Parent.TemplateWidth - 10
+          Height: =Parent.TemplateHeight
+      - lbl_KPILabel As label:
+          Text: =ThisItem.Label
+          X: =14
+          Y: =14
+          Width: =Parent.TemplateWidth - 40
+          Height: =26
+          Size: =11
+          Color: =RGBA(122, 111, 99, 1)
+      - lbl_KPIValue As label:
+          Text: =ThisItem.Value
+          X: =14
+          Y: =40
+          Width: =Parent.TemplateWidth - 40
+          Height: =50
+          Size: =28
+          FontWeight: =FontWeight.Bold
+          Color: =RGBA(74, 51, 35, 1)
+
+  - btn_SyncNow As button:
+      Text: ="🔄 SYNC NOW"
+      X: =20
+      Y: =220
+      Width: =Parent.Width - 40
+      Height: =50
+      Fill: =RGBA(46, 125, 50, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Bold
+      RadiusTopLeft: =10
+      RadiusTopRight: =10
+      RadiusBottomLeft: =10
+      RadiusBottomRight: =10
+      OnSelect: |
+        =Set(
+          varSurveysCollection,
+          CoffeeCropTourAPI.list_surveys_api_surveys_get({}, { Authorization: varAuthToken })
+        );
+        Notify("Refreshed from server.", NotificationType.Success)
+
+  - btn_NewSurvey As button:
+      Text: ="➕ New Crop Survey"
+      X: =20
+      Y: =290
+      Width: =Parent.Width - 40
+      Height: =50
+      Fill: =RGBA(111, 78, 55, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Bold
+      RadiusTopLeft: =10
+      RadiusTopRight: =10
+      RadiusBottomLeft: =10
+      RadiusBottomRight: =10
+      OnSelect: |
+        =Set(varDraftSurvey, {});
+        Set(varSampleNo, ""); Set(varProvince, ""); Set(varDistrict, "");
+        Set(varFarmerId, ""); Set(varFarmerName, ""); Set(varFarmerPhNo, ""); Set(varFarmerNote, "");
+        Navigate(scr_Step1_SampleFarmer, ScreenTransition.Cover)
+
+  - btn_ViewSurveys As button:
+      Text: ="📋 View All Surveys"
+      X: =20
+      Y: =354
+      Width: =Parent.Width - 40
+      Height: =50
+      Fill: =RGBA(255, 255, 255, 1)
+      Color: =RGBA(74, 51, 35, 1)
+      BorderColor: =RGBA(111, 78, 55, 1)
+      BorderThickness: =1.5
+      RadiusTopLeft: =10
+      RadiusTopRight: =10
+      RadiusBottomLeft: =10
+      RadiusBottomRight: =10
+      OnSelect: |
+        =Navigate(scr_SurveyList, ScreenTransition.Cover)
+
+  - gal_RecentSurveys As gallery.Vertical:
+      Items: =SortByColumns(varSurveysCollection, "survey_date", Descending)
+      X: =20
+      Y: =420
+      Width: =Parent.Width - 40
+      Height: =Parent.Height - 440
+      TemplateSize: =70
+      Children:
+      - lbl_GalFarmerId As label:
+          Text: =ThisItem.farmer_id & " — " & ThisItem.province
+          X: =10
+          Y: =8
+          Width: =Parent.TemplateWidth - 100
+          Height: =26
+          FontWeight: =FontWeight.Bold
+          Size: =13
+      - lbl_GalDate As label:
+          Text: =ThisItem.survey_date & " · " & ThisItem.sync_status
+          X: =10
+          Y: =34
+          Width: =Parent.TemplateWidth - 100
+          Height: =22
+          Size: =11
+          Color: =RGBA(122, 111, 99, 1)

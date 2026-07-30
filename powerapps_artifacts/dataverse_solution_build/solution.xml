@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml version="9.2.0.0" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="coffee-crop-tour-migration-script">
+  <SolutionManifest>
+    <UniqueName>CoffeeCropTourSolution</UniqueName>
+    <LocalizedNames>
+      <LocalizedName description="Coffee Crop Tour" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Dataverse tables replacing the Python/FastAPI backend for the Coffee Crop Tour Indonesia coffee survey platform." languagecode="1033" />
+    </Descriptions>
+    <Version>1.0.0.0</Version>
+    <Managed>0</Managed>
+    <Publisher>
+      <UniqueName>cctpublisher</UniqueName>
+      <LocalizedNames>
+        <LocalizedName description="Coffee Crop Tour Publisher" languagecode="1033" />
+      </LocalizedNames>
+      <Descriptions>
+        <Description description="Publisher for Coffee Crop Tour Dataverse solution" languagecode="1033" />
+      </Descriptions>
+      <EMailAddress xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+      <SupportingWebsiteUrl xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+      <CustomizationPrefix>cct</CustomizationPrefix>
+      <CustomizationOptionValuePrefix>10000</CustomizationOptionValuePrefix>
+    </Publisher>
+    <RootComponents>
+      <RootComponent type="1" id="{00000000-0000-0000-0000-000000000001}" schemaName="cct_survey" behavior="0" />
+    </RootComponents>
+    <MissingDependencies />
+  </SolutionManifest>
+</ImportExportXml>

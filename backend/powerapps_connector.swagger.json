@@ -1,0 +1,1202 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Coffee Crop Tour API",
+    "description": "Coffee Crop Tour REST API -- Indonesia coffee crop survey platform. Field data (surveys, farmers, farms, production estimates, photos) collected offline-first via the companion PWA and centralized here for Power Apps / Power BI reporting.",
+    "version": "1.0.0"
+  },
+  "host": "REPLACE_WITH_YOUR_DEPLOYED_HOST.example.com",
+  "basePath": "/",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "x-ms-summary": "JWT Bearer token",
+      "x-ms-visibility": "important"
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {}
+          }
+        },
+        "parameters": [],
+        "security": [],
+        "x-ms-visibility": "important"
+      }
+    },
+    "/api/login": {
+      "post": {
+        "summary": "Login",
+        "operationId": "login_api_login_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "$ref": "#/definitions/LoginResponse"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LoginRequest"
+            }
+          }
+        ],
+        "security": [],
+        "x-ms-visibility": "important"
+      }
+    },
+    "/api/surveys": {
+      "post": {
+        "summary": "Create Survey",
+        "operationId": "create_survey_api_surveys_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "schema": {
+              "$ref": "#/definitions/SyncResultItem"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SurveyIn"
+            }
+          }
+        ],
+        "x-ms-visibility": "important"
+      },
+      "get": {
+        "summary": "List Surveys",
+        "operationId": "list_surveys_api_surveys_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "province",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Province"
+            }
+          },
+          {
+            "name": "crop_year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Crop Year"
+            }
+          },
+          {
+            "name": "surveyor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Surveyor Id"
+            }
+          },
+          {
+            "name": "sync_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sync Status"
+            }
+          },
+          {
+            "name": "data_quality_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Quality Status"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 200,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SurveyOut"
+              },
+              "title": "Response List Surveys Api Surveys Get"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "x-ms-visibility": "important"
+      }
+    },
+    "/api/surveys/{survey_id}": {
+      "get": {
+        "summary": "Get Survey",
+        "operationId": "get_survey_api_surveys__survey_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "survey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Survey Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "$ref": "#/definitions/SurveyOut"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "x-ms-visibility": "important"
+      },
+      "put": {
+        "summary": "Update Survey",
+        "operationId": "update_survey_api_surveys__survey_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "survey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Survey Id"
+            }
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SurveyUpdate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "$ref": "#/definitions/SurveyOut"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "x-ms-visibility": "important"
+      }
+    },
+    "/api/sync": {
+      "post": {
+        "summary": "Sync Batch",
+        "operationId": "sync_batch_api_sync_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "$ref": "#/definitions/SyncResponse"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SyncRequest"
+            }
+          }
+        ],
+        "x-ms-visibility": "important"
+      }
+    },
+    "/api/photos": {
+      "post": {
+        "summary": "Upload Photo",
+        "description": "Photos are stored as files (local disk in dev; swap this block for an\nobject-storage upload -- S3/Blob/GCS -- in production, per Step 23) and\nonly the resulting URL/path is written to the database, never the raw\nbinary blob itself.",
+        "operationId": "upload_photo_api_photos_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "schema": {
+              "$ref": "#/definitions/PhotoOut"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [],
+        "x-ms-visibility": "important"
+      }
+    },
+    "/api/farmers": {
+      "get": {
+        "summary": "List Farmers",
+        "operationId": "list_farmers_api_farmers_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 200,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FarmerOut"
+              },
+              "title": "Response List Farmers Api Farmers Get"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "x-ms-visibility": "important"
+      }
+    },
+    "/api/farms": {
+      "get": {
+        "summary": "List Farms",
+        "operationId": "list_farms_api_farms_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "province",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Province"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 200,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FarmOut"
+              },
+              "title": "Response List Farms Api Farms Get"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "x-ms-visibility": "important"
+      }
+    },
+    "/api/regions": {
+      "get": {
+        "summary": "List Regions",
+        "operationId": "list_regions_api_regions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/RegionOut"
+              },
+              "type": "array",
+              "title": "Response List Regions Api Regions Get"
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [],
+        "x-ms-visibility": "important"
+      }
+    },
+    "/api/users": {
+      "get": {
+        "summary": "List Users",
+        "operationId": "list_users_api_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/UserOut"
+              },
+              "type": "array",
+              "title": "Response List Users Api Users Get"
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [],
+        "x-ms-visibility": "important"
+      },
+      "post": {
+        "summary": "Create User",
+        "operationId": "create_user_api_users_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "schema": {
+              "$ref": "#/definitions/UserOut"
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "schema": {
+              "$ref": "#/definitions/HTTPValidationError"
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserCreate"
+            }
+          }
+        ],
+        "x-ms-visibility": "important"
+      }
+    }
+  },
+  "definitions": {
+    "Body_upload_photo_api_photos_post": {
+      "properties": {
+        "survey_id": {
+          "type": "string"
+        },
+        "photo_type": {
+          "type": "string",
+          "default": "Other"
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "captured_at": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string",
+          "contentMediaType": "application/octet-stream"
+        }
+      },
+      "type": "object",
+      "required": [
+        "survey_id",
+        "file"
+      ]
+    },
+    "FarmOut": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "farmer_id": {
+          "type": "string"
+        },
+        "province": {
+          "type": "string"
+        },
+        "regency": {
+          "type": "string"
+        },
+        "district": {
+          "type": "string"
+        },
+        "village": {
+          "type": "string"
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "coffee_species": {
+          "type": "string"
+        },
+        "farm_area_ha": {
+          "type": "number"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "farmer_id",
+        "province",
+        "regency",
+        "district",
+        "village",
+        "latitude",
+        "longitude",
+        "coffee_species",
+        "farm_area_ha"
+      ]
+    },
+    "FarmerOut": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "farmer_code": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "phone_number": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "farmer_code",
+        "full_name",
+        "phone_number"
+      ]
+    },
+    "HTTPValidationError": {
+      "properties": {
+        "detail": {
+          "items": {
+            "$ref": "#/components/schemas/ValidationError"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "LoginRequest": {
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "required": [
+        "username",
+        "password"
+      ]
+    },
+    "LoginResponse": {
+      "properties": {
+        "access_token": {
+          "type": "string"
+        },
+        "token_type": {
+          "type": "string",
+          "default": "bearer"
+        },
+        "user_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "required": [
+        "access_token",
+        "user_id",
+        "username",
+        "full_name",
+        "role"
+      ]
+    },
+    "PhotoOut": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "survey_id": {
+          "type": "string"
+        },
+        "photo_type": {
+          "type": "string"
+        },
+        "photo_url": {
+          "type": "string"
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "survey_id",
+        "photo_type",
+        "photo_url",
+        "latitude",
+        "longitude",
+        "captured_at"
+      ]
+    },
+    "RegionOut": {
+      "properties": {
+        "province": {
+          "type": "string"
+        },
+        "regency": {
+          "type": "string"
+        },
+        "farm_count": {
+          "type": "integer"
+        },
+        "survey_count": {
+          "type": "integer"
+        }
+      },
+      "type": "object",
+      "required": [
+        "province",
+        "farm_count",
+        "survey_count"
+      ]
+    },
+    "SurveyIn": {
+      "properties": {
+        "survey_id": {
+          "type": "string",
+          "description": "Client-generated UUID"
+        },
+        "device_id": {
+          "type": "string"
+        },
+        "surveyor_id": {
+          "type": "string"
+        },
+        "surveyor_name": {
+          "type": "string"
+        },
+        "province": {
+          "type": "string"
+        },
+        "regency": {
+          "type": "string"
+        },
+        "district": {
+          "type": "string"
+        },
+        "village": {
+          "type": "string"
+        },
+        "farmer_id": {
+          "type": "string"
+        },
+        "farmer_name": {
+          "type": "string"
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "gps_accuracy": {
+          "type": "number"
+        },
+        "farm_area_ha": {
+          "type": "number"
+        },
+        "coffee_species": {
+          "type": "string"
+        },
+        "coffee_variety": {
+          "type": "string"
+        },
+        "tree_age": {
+          "type": "number"
+        },
+        "tree_population": {
+          "type": "integer"
+        },
+        "flowering_condition": {
+          "type": "string"
+        },
+        "fruit_stage": {
+          "type": "string"
+        },
+        "fruit_load": {
+          "type": "string"
+        },
+        "cherry_condition": {
+          "type": "string"
+        },
+        "harvest_progress_pct": {
+          "type": "number"
+        },
+        "selling_progress_pct": {
+          "type": "number"
+        },
+        "production_last_year_kg": {
+          "type": "number"
+        },
+        "production_current_estimate_kg": {
+          "type": "number"
+        },
+        "production_next_crop_estimate_kg": {
+          "type": "number"
+        },
+        "pest_condition": {
+          "type": "string"
+        },
+        "disease_condition": {
+          "type": "string"
+        },
+        "rainfall_condition": {
+          "type": "string"
+        },
+        "soil_condition": {
+          "type": "string"
+        },
+        "farmer_feedback": {
+          "type": "string"
+        },
+        "surveyor_notes": {
+          "type": "string"
+        },
+        "survey_date": {
+          "type": "string"
+        },
+        "survey_time": {
+          "type": "string"
+        },
+        "crop_year": {
+          "type": "string"
+        },
+        "survey_round": {
+          "type": "string"
+        },
+        "sample_no": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        },
+        "local_updated_at": {
+          "type": "string"
+        },
+        "version_number": {
+          "type": "integer"
+        },
+        "raw_payload": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "required": [
+        "survey_id"
+      ],
+      "description": "One survey record as sent by the device. Mirrors the field list from\nthe task spec (Step 2), plus the QN.xlsx raw payload as a flexible dict\nso no questionnaire field is ever dropped even before full normalization."
+    },
+    "SurveyOut": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "sync_status": {
+          "type": "string"
+        },
+        "data_quality_status": {
+          "type": "string"
+        },
+        "province": {
+          "type": "string"
+        },
+        "regency": {
+          "type": "string"
+        },
+        "district": {
+          "type": "string"
+        },
+        "farmer_id": {
+          "type": "string"
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "survey_date": {
+          "type": "string"
+        },
+        "crop_year": {
+          "type": "string"
+        },
+        "version_number": {
+          "type": "integer"
+        },
+        "server_updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "has_conflict": {
+          "type": "boolean"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "sync_status",
+        "data_quality_status",
+        "province",
+        "regency",
+        "district",
+        "farmer_id",
+        "latitude",
+        "longitude",
+        "survey_date",
+        "crop_year",
+        "version_number",
+        "server_updated_at",
+        "has_conflict"
+      ]
+    },
+    "SurveyUpdate": {
+      "properties": {
+        "farm_area_ha": {
+          "type": "number"
+        },
+        "production_current_estimate_kg": {
+          "type": "number"
+        },
+        "agronomist_adjusted_estimate_kg": {
+          "type": "number"
+        },
+        "adjustment_reason": {
+          "type": "string"
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "data_quality_status": {
+          "type": "string"
+        },
+        "version_number": {
+          "type": "integer"
+        }
+      },
+      "type": "object",
+      "description": "Partial update, e.g. an agronomist adjusting an estimate or fixing GPS."
+    },
+    "SyncRequest": {
+      "properties": {
+        "device_id": {
+          "type": "string"
+        },
+        "surveyor_id": {
+          "type": "string"
+        },
+        "surveys": {
+          "items": {
+            "$ref": "#/components/schemas/SurveyIn"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object",
+      "required": [
+        "device_id",
+        "surveys"
+      ]
+    },
+    "SyncResponse": {
+      "properties": {
+        "run_id": {
+          "type": "string"
+        },
+        "device_id": {
+          "type": "string"
+        },
+        "records_received": {
+          "type": "integer"
+        },
+        "records_created": {
+          "type": "integer"
+        },
+        "records_updated": {
+          "type": "integer"
+        },
+        "records_failed": {
+          "type": "integer"
+        },
+        "results": {
+          "items": {
+            "$ref": "#/components/schemas/SyncResultItem"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object",
+      "required": [
+        "run_id",
+        "device_id",
+        "records_received",
+        "records_created",
+        "records_updated",
+        "records_failed",
+        "results"
+      ]
+    },
+    "SyncResultItem": {
+      "properties": {
+        "survey_id": {
+          "type": "string"
+        },
+        "result": {
+          "type": "string"
+        },
+        "server_updated_at": {
+          "type": "string"
+        },
+        "data_quality_status": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "required": [
+        "survey_id",
+        "result"
+      ]
+    },
+    "UserCreate": {
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "required": [
+        "username",
+        "full_name",
+        "role",
+        "password"
+      ]
+    },
+    "UserOut": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "is_active": {
+          "type": "boolean"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "username",
+        "full_name",
+        "role",
+        "is_active"
+      ]
+    },
+    "ValidationError": {
+      "properties": {
+        "loc": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "msg": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "input": {},
+        "ctx": {
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "required": [
+        "loc",
+        "msg",
+        "type"
+      ]
+    }
+  },
+  "x-ms-connector-metadata": [
+    {
+      "propertyName": "Website",
+      "propertyValue": "https://github.com/Wawan3006/coffee-crop-tour"
+    },
+    {
+      "propertyName": "Privacy policy",
+      "propertyValue": "https://github.com/Wawan3006/coffee-crop-tour"
+    },
+    {
+      "propertyName": "Categories",
+      "propertyValue": "Data;Productivity"
+    }
+  ]
+}

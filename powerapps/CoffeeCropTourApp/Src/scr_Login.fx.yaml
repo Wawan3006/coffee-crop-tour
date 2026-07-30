@@ -1,0 +1,105 @@
+scr_Login As screen:
+  Fill: =RGBA(245, 242, 238, 1)
+  OnVisible: |
+    =Set(varLoginError, "")
+  Children:
+  - lbl_AppTitle As label:
+      Text: ="☕ Coffee Crop Tour"
+      X: =40
+      Y: =80
+      Width: =Parent.Width - 80
+      Height: =50
+      FontWeight: =FontWeight.Bold
+      Size: =28
+      Color: =RGBA(74, 51, 35, 1)
+      Align: =Align.Center
+
+  - lbl_Subtitle As label:
+      Text: ="Indonesia coffee crop survey platform"
+      X: =40
+      Y: =134
+      Width: =Parent.Width - 80
+      Height: =30
+      Size: =14
+      Color: =RGBA(122, 111, 99, 1)
+      Align: =Align.Center
+
+  - txt_Username As text input.TextInput:
+      Default: =""
+      HintText: ="Username (e.g. surveyor1)"
+      X: =40
+      Y: =220
+      Width: =Parent.Width - 80
+      Height: =50
+      BorderColor: =RGBA(226, 220, 211, 1)
+      BorderThickness: =1.5
+      RadiusTopLeft: =10
+      RadiusTopRight: =10
+      RadiusBottomLeft: =10
+      RadiusBottomRight: =10
+
+  - txt_Password As text input.TextInput:
+      Default: =""
+      HintText: ="Password"
+      Mode: =TextMode.Password
+      X: =40
+      Y: =282
+      Width: =Parent.Width - 80
+      Height: =50
+      BorderColor: =RGBA(226, 220, 211, 1)
+      BorderThickness: =1.5
+      RadiusTopLeft: =10
+      RadiusTopRight: =10
+      RadiusBottomLeft: =10
+      RadiusBottomRight: =10
+
+  - btn_Login As button:
+      Text: ="Log In"
+      X: =40
+      Y: =348
+      Width: =Parent.Width - 80
+      Height: =52
+      Fill: =RGBA(111, 78, 55, 1)
+      Color: =RGBA(255, 255, 255, 1)
+      FontWeight: =FontWeight.Bold
+      RadiusTopLeft: =10
+      RadiusTopRight: =10
+      RadiusBottomLeft: =10
+      RadiusBottomRight: =10
+      OnSelect: |
+        =Set(varLoginError, "");
+        Set(
+          varLoginResult,
+          CoffeeCropTourAPI.login_api_login_post(
+            { username: txt_Username.Text, password: txt_Password.Text }
+          )
+        );
+        If(
+          !IsBlank(varLoginResult.access_token),
+          Set(varAuthToken, "Bearer " & varLoginResult.access_token);
+          Set(varCurrentUser, varLoginResult);
+          Set(varCurrentUserRole, varLoginResult.role);
+          Navigate(scr_HomeDashboard, ScreenTransition.Fade),
+          Set(varLoginError, "Invalid username or password. Please try again.")
+        )
+
+  - lbl_LoginError As label:
+      Text: =varLoginError
+      X: =40
+      Y: =410
+      Width: =Parent.Width - 80
+      Height: =30
+      Color: =RGBA(211, 47, 47, 1)
+      Size: =13
+      Align: =Align.Center
+
+  - lbl_DemoHint As label:
+      Text: |
+        ="Demo accounts: surveyor1 / agronomist1 / manager1 / admin1 (password demo)"
+      X: =40
+      Y: =460
+      Width: =Parent.Width - 80
+      Height: =40
+      Size: =11
+      Color: =RGBA(122, 111, 99, 1)
+      Align: =Align.Center

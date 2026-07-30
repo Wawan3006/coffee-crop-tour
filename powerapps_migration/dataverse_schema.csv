@@ -1,0 +1,50 @@
+dataverse_column,display_name,data_type,source_qn_xlsx_field
+cct_surveyid,Survey ID,Text (Alternate Key),system-generated UUID
+cct_sampleno,Sample No.,Text,Sample No.
+cct_province,Province,Choice,Province
+cct_district,District,Text,District
+cct_farmerid,Farmer ID,Text,(added per user request)
+cct_farmername,Farmer Name,Text,Name
+cct_farmerphno,Farmer Phone,Text,Ph No.
+cct_farmernote,Farmer Note,Text,Note
+cct_totalcoffeeareahamar2025,Total Coffee Area Ha Mar2025,Decimal,Total Coffee Area (Ha) Mar 2025
+cct_totalcoffeeareaha,Total Coffee Area Ha,Decimal,Total Coffee Area (Ha)
+cct_additionaltreesha,Additional/Expanding Trees Ha,Decimal,Additional/expanding trees/Ha
+cct_bearingha2024_25,Bearing Area Ha 2024-25,Decimal,Bearing Area (ha) 2024-25
+cct_bearingha2025_26,Bearing Area Ha 2025-26,Decimal,Bearing Area (ha) 2025-26
+cct_bearingha2026_27,Bearing Area Ha 2026-27,Decimal,Bearing Area (ha) 2026-27
+cct_bearingha2027_28,Bearing Area Ha 2027-28,Decimal,Bearing Area (ha) 2027-28
+cct_production2024_25q,Production Quintals 2024-25,Decimal,Production (Quintals) 2024-25
+cct_production2025_26q,Production Quintals 2025-26,Decimal,Production (Quintals) 2025-26
+cct_production2026_27q,Production Quintals 2026-27,Decimal,Production (Quintals) 2026-27
+cct_production2027_28q,Production Quintals 2027-28,Decimal,Production (Quintals) 2027-28
+cct_sellingnov25..dec26,Selling (15 monthly cols),Decimal x15,Selling Nov-25 ... Dec-26 + Undecided
+cct_actualstock2026_27q,Actual Stock 2026-27 Quintal,Decimal,Actual stock 2026-27 (Quintal)
+cct_stockinregionpct,Stock in Region %,Decimal,Stock in region (%)
+cct_flycropoutlook,Fly Crop Outlook vs LY,Choice (Higher/Same/Lower),Fly Crop Outlook Compare to LY
+cct_maincropoutlook,Main Crop Outlook vs LY,Choice (Early/Same/Late),Main Crop Outlook Compare to LY
+cct_maincropoutlookreason,Main Crop Outlook Reason,Text,Reason
+cct_rainfallblossom,Rainfall at Blossom,Choice (BN/N/AN/Ex),Rainfall (BN/N/AN/Ex) Blossom stage
+cct_rainfallfruitset,Rainfall at Fruit Set,Choice (BN/N/AN/Ex),Rainfall (BN/N/AN/Ex) Fruit Set stage
+cct_damagecode,Damage Code,Choice (1-8),Damage code 1-Blossom .. 8-No damage
+cct_farmgatepriceidr,Farmgate Price IDR/Kg,Decimal,Price IDR/Kg
+cct_priceopinion,Price Opinion,Text,Opinion
+cct_futurepricecode,Future Price Code,Choice,Future price code
+cct_reactiontopricecode,Reaction to Price Code,Choice,Reaction to price codes
+cct_wages,Wages,Decimal,Wages
+cct_herbicidetype,Herbicide Type,Text,Herbicide type
+cct_herbicidevolume,Herbicide Volume,Decimal,Herbicide volume
+cct_npk2025,NPK Fertilizer 2025,Decimal,Fertilizer (NPK) 2025
+cct_urea2025,Urea Fertilizer 2025,Decimal,Fertilizer (Urea) 2025
+cct_tsp2025,TSP Fertilizer 2025,Decimal,Fertilizer (TSP) 2025
+cct_npk2026,NPK Fertilizer 2026,Decimal,Fertilizer (NPK) 2026
+cct_urea2026,Urea Fertilizer 2026,Decimal,Fertilizer (Urea) 2026
+cct_tsp2026,TSP Fertilizer 2026,Decimal,Fertilizer (TSP) 2026
+cct_latitude,Latitude,Decimal (Two Decimal),GPS auto-capture
+cct_longitude,Longitude,Decimal (Two Decimal),GPS auto-capture
+cct_surveydate,Survey Date,Date,system field
+cct_cropyear,Crop Year,Choice,system field
+cct_syncstatus,Sync Status,Choice (Draft/Waiting/Synced/Error),system field
+cct_dataqualitystatus,Data Quality Status,Choice (VALID/WARNING/REVIEW/REJECTED),computed by Power Automate flow
+cct_modelestimatekg,Model Estimate Kg,Decimal,computed by Power Automate flow
+cct_agronomistadjustedestimatekg,Agronomist Adjusted Estimate Kg,Decimal (column-security: Agronomist/Admin only),manual adjustment field
