@@ -605,6 +605,7 @@ const App = (() => {
       <div class="card">
         <div class="card-title">Export Filtered Data (${filtered.length} surveys)</div>
         <div class="export-btn-row" style="flex-direction:column">
+          <button id="exp-qn-xlsx" class="btn-secondary">📗 Export Official Questionnaire (Excel .xlsx)</button>
           <button id="exp-excel-csv" class="btn-secondary">📊 Export Raw Data (CSV for Excel)</button>
           <button id="exp-summary-csv" class="btn-secondary">📈 Export Crop Estimate Summary (CSV)</button>
           <button id="exp-geojson2" class="btn-secondary">🗺️ Export GeoJSON</button>
@@ -614,6 +615,13 @@ const App = (() => {
       </div>
     `;
     bindFilterBar(viewExport);
+    document.getElementById('exp-qn-xlsx').addEventListener('click', () => {
+      try {
+        Utils.downloadXLSX(filtered, 'crop_tour_questionnaire.xlsx');
+      } catch (e) {
+        App.toast('Excel export failed: ' + e.message, 'error');
+      }
+    });
     document.getElementById('exp-excel-csv').addEventListener('click', () => Utils.downloadBlob(Utils.toCSV(Utils.surveysToFlatRows(filtered)), 'crop_tour_raw_data.csv', 'text/csv'));
     document.getElementById('exp-summary-csv').addEventListener('click', () => {
       const byProvince = Utils.groupBy(filtered, s => s.location?.province || 'Unknown');
