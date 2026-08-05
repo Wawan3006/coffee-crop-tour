@@ -6,13 +6,16 @@
 // fall back to the original local-only simulation, so the existing GitHub
 // Pages deployment keeps working exactly as before with ZERO backend. Once a
 // real backend is deployed (Step 4-6), set API_BASE_URL below (or via
-// localStorage override, see setBaseUrl()) to point the whole app at it.
+// setBaseUrl()) to point the whole app at it.
+//
+// Persistence: uses LocalStore (js/local-store.js, IndexedDB-backed) instead
+// of window.localStorage directly -- see Step "Replace Local Storage".
 // ============================================================================
 
 const Api = (() => {
   // Set this to your deployed FastAPI URL, e.g. "https://api.yourcompany.com"
   // Leave as '' to keep the app fully offline-only (original behavior).
-  let API_BASE_URL = localStorage.getItem('cct_api_base_url') || '';
+  let API_BASE_URL = LocalStore.getItem('cct_api_base_url') || '';
 
   function isConfigured() {
     return !!API_BASE_URL;
@@ -20,17 +23,17 @@ const Api = (() => {
 
   function setBaseUrl(url) {
     API_BASE_URL = url || '';
-    if (API_BASE_URL) localStorage.setItem('cct_api_base_url', API_BASE_URL);
-    else localStorage.removeItem('cct_api_base_url');
+    if (API_BASE_URL) LocalStore.setItem('cct_api_base_url', API_BASE_URL);
+    else LocalStore.removeItem('cct_api_base_url');
   }
 
   function getToken() {
-    return localStorage.getItem('cct_api_token') || null;
+    return LocalStore.getItem('cct_api_token') || null;
   }
 
   function setToken(token) {
-    if (token) localStorage.setItem('cct_api_token', token);
-    else localStorage.removeItem('cct_api_token');
+    if (token) LocalStore.setItem('cct_api_token', token);
+    else LocalStore.removeItem('cct_api_token');
   }
 
   async function request(path, options = {}) {
@@ -85,6 +88,79 @@ const Api = (() => {
     return request('/api/health');
   }
 
+  // ---- Analytics / business-calculation endpoints (Step: "Move all
+  // business calculations from JavaScript into Python"). All yield
+  // estimation, crop scoring, harvest progress, flowering score, weather
+  // calculations, validation, duplicate detection, and dashboard/report
+  // aggregation math now lives server-side in backend/services/*.py and
+  // backend/routers/analytics.py -- this app only calls it. ----
+
+  async function analyticsAggregate(surveys) {
+    return request('/api/analytics/aggregate', { method: 'POST', body: JSON.stringify({ surveys }) });
+  }
+
+  async function analyticsCompare(surveys, groupBy) {
+    return request('/api/analytics/compare', { method: 'POST', body: JSON.stringify({ surveys, group_by: groupBy }) });
+  }
+
+  async function analyticsDashboardStats(surveys, majorProvinces) {
+    return request('/api/analytics/dashboard-stats', {
+      method: 'POST', body: JSON.stringify({ surveys, major_provinces: majorProvinces }),
+    });
+  }
+
+  async function analyticsForecast(surveys, provinceRef, adjustments) {
+    return request('/api/analytics/forecast', {
+      method: 'POST', body: JSON.stringify({ surveys, province_ref: provinceRef, adjustments }),
+    });
+  }
+
+  async function analyticsNarrative(scopeName, surveys) {
+    return request('/api/analytics/narrative', {
+      method: 'POST', body: JSON.stringify({ scope_name: scopeName, surveys }),
+    });
+  }
+
+  async function analyticsWeatherScore(params) {
+    return request('/api/analytics/weather-score', { method: 'POST', body: JSON.stringify(params) });
+  }
+
+  async function analyticsDuplicateCheckFarmer(params) {
+    return request('/api/analytics/duplicate-check/farmer', { method: 'POST', body: JSON.stringify(params) });
+  }
+
+  async function analyticsDuplicateCheckSurvey(params) {
+    return request('/api/analytics/duplicate-check/survey', { method: 'POST', body: JSON.stringify(params) });
+  }
+
+  async function analyticsYieldEstimate(params) {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== null && v !== undefined))
+    ).toString();
+    return request(`/api/analytics/yield-estimate${qs ? '?' + qs : ''}`);
+  }
+
+  async function analyticsFloweringScore(floweringCondition) {
+    const qs = new URLSearchParams({ flowering_condition: floweringCondition || '' }).toString();
+    return request(`/api/analytics/flowering-score?${qs}`);
+  }
+
+  async function analyticsCropHealthIndex(params) {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== null && v !== undefined))
+    ).toString();
+    return request(`/api/analytics/crop-health-index${qs ? '?' + qs : ''}`);
+  }
+
+  async function analyticsHarvestProgressStatus(harvestProgressPct) {
+    const qs = new URLSearchParams({ harvest_progress_pct: harvestProgressPct }).toString();
+    return request(`/api/analytics/harvest-progress-status?${qs}`);
+  }
+
+  async function gpsCheck(params) {
+    return request('/api/gps/check', { method: 'POST', body: JSON.stringify(params) });
+  }
+
   // Map an app-local survey object (flat QN.xlsx field model, see
   // survey-form.js blankSurvey()) into the backend's SurveyIn schema
   // (schemas.py). Keeps the ENTIRE original record in raw_payload so no
@@ -117,5 +193,9 @@ const Api = (() => {
     isConfigured, setBaseUrl, getToken, setToken,
     login, logout, syncBatch, getSurveys, updateSurvey, getRegions, healthCheck,
     toApiSurveyPayload,
+    analyticsAggregate, analyticsCompare, analyticsDashboardStats, analyticsForecast,
+    analyticsNarrative, analyticsWeatherScore, analyticsDuplicateCheckFarmer,
+    analyticsDuplicateCheckSurvey, analyticsYieldEstimate, analyticsFloweringScore,
+    analyticsCropHealthIndex, analyticsHarvestProgressStatus, gpsCheck,
   };
 })();

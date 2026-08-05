@@ -92,10 +92,32 @@ const App = (() => {
   }
 
   // ===================== HOME DASHBOARD =====================
+  // NOTE: KPI aggregation (totals, avg outlook %, avg harvest %) is computed
+  // server-side by POST /api/analytics/aggregate (see
+  // backend/services/analytics_service.py::aggregate_surveys) -- this view
+  // only renders whatever the API returns. Falls back to a local zeroed
+  // aggregate if the central server isn't configured/reachable so the
+  // offline-only deployment mode keeps working.
+  function zeroAggregate() {
+    return { totalFarms: 0, totalLocations: 0, totalHa: 0, provincesCompleted: 0,
+      robustaCount: 0, arabicaCount: 0, robustaHa: 0, arabicaHa: 0,
+      avgOutlookPct: null, avgOutlookLabel: 'Similar', avgHarvestPct: null };
+  }
+
+  async function computeAggregate(filtered) {
+    if (!Api.isConfigured()) return zeroAggregate();
+    try {
+      return await Api.analyticsAggregate(filtered);
+    } catch (e) {
+      console.warn('analyticsAggregate failed, falling back to zeroed KPIs:', e);
+      return zeroAggregate();
+    }
+  }
+
   async function viewHome() {
     await refreshData();
     const filtered = applyFilters(allSurveys);
-    const agg = Utils.aggregateSurveys(filtered);
+    const agg = await computeAggregate(filtered);
     const pending = await Sync.getPendingCounts();
     const targetLocations = 350; // demo survey target
     const surveyProgressPct = Math.min(100, Math.round((agg.totalLocations / targetLocations) * 100));
@@ -112,7 +134,7 @@ const App = (() => {
         <div class="kpi-card"><div class="kpi-label">Survey Locations</div><div class="kpi-value">${Utils.fmtNum(agg.totalLocations)}</div></div>
         <div class="kpi-card"><div class="kpi-label">Hectares Surveyed</div><div class="kpi-value">${Utils.fmtNum(agg.totalHa,1)}</div></div>
         <div class="kpi-card"><div class="kpi-label">Provinces Covered</div><div class="kpi-value">${agg.provincesCompleted}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg Crop Outlook</div><div class="kpi-value" style="color:${Utils.outlookColor(Utils.outlookClass(agg.avgOutlookPct))}">${Utils.fmtPct(agg.avgOutlookPct)}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg Crop Outlook</div><div class="kpi-value" style="color:${Utils.outlookColor(agg.avgOutlookLabel)}">${Utils.fmtPct(agg.avgOutlookPct)}</div></div>
       </div>
 
       <div class="card">
@@ -144,6 +166,7 @@ const App = (() => {
           <span class="badge badge-waiting">Waiting to Sync &nbsp;${pending.waiting_sync}</span>
           <span class="badge badge-draft">Draft &nbsp;${pending.draft}</span>
           <span class="badge badge-error">Sync Error &nbsp;${pending.sync_error}</span>
+          <span class="badge badge-conflict">Conflicts &nbsp;${pending.conflict}</span>
         </div>
         <div class="muted small" style="margin-top:8px">
           ${Sync.isOnline() ? '🟢 Online' : '🔴 Offline'} ${Api.isConfigured() ? '· Central server configured' : '· Local-only mode (no server configured)'}
@@ -151,6 +174,7 @@ const App = (() => {
         <button id="btn-sync-now" class="btn-primary" style="width:100%;margin-top:10px" ${(!Sync.isOnline() || (pending.waiting_sync + pending.sync_error) === 0) ? 'disabled' : ''}>
           ${Sync.isSyncing ? '⏳ Syncing...' : '🔄 SYNC NOW'}
         </button>
+        <button id="btn-open-sync-center" class="btn-secondary" style="width:100%;margin-top:8px">🗂️ Offline Queue &amp; Sync Center</button>
       </div>
 
       <div class="card">
@@ -164,10 +188,12 @@ const App = (() => {
     if (syncNowBtn) syncNowBtn.addEventListener('click', async () => {
       syncNowBtn.disabled = true;
       syncNowBtn.textContent = '⏳ Syncing...';
-      const result = await Sync.syncAll();
-      toast(`Sync complete: ${result.synced} synced, ${result.failed} failed.`, result.failed ? 'error' : 'info');
+      const result = await Sync.syncAll({ trigger: 'manual' });
+      toast(`Sync complete: ${result.synced} synced, ${result.failed} failed, ${result.conflicts || 0} conflicts.`, result.failed ? 'error' : 'info');
       viewHome();
     });
+    const openSyncCenterBtn = document.getElementById('btn-open-sync-center');
+    if (openSyncCenterBtn) openSyncCenterBtn.addEventListener('click', () => navigate('#/sync-center'));
 
     Charts.donutChart(document.getElementById('chart-coverage'), [
       { label: 'Robusta', value: agg.robustaCount, color: '#6f4e37' },
@@ -197,7 +223,7 @@ const App = (() => {
   }
 
   function statusLabel(status) {
-    return { synced: 'Synced', waiting_sync: 'Waiting for Sync', draft: 'Draft', sync_error: 'Sync Error', syncing: 'Syncing...' }[status] || status;
+    return { synced: 'Synced', waiting_sync: 'Waiting for Sync', draft: 'Draft', sync_error: 'Sync Error', syncing: 'Syncing...', conflict: 'Conflict' }[status] || status;
   }
 
   // ===================== SURVEY LIST =====================
@@ -325,25 +351,39 @@ const App = (() => {
   }
 
   // ===================== COMPARISON DASHBOARD =====================
+  // NOTE: all group-by statistics (production MT, area, implied yield,
+  // harvest %, YoY change %) are computed server-side by
+  // POST /api/analytics/compare (see
+  // backend/services/analytics_service.py::compare_by_field / stats_for).
+  // This view only groups locally for chart/table iteration order and
+  // renders whatever the API returned.
+  function zeroGroupStats() {
+    return { productionMt: 0, areaHa: 0, yieldKgHa: 0, harvestPct: 0, changePct: null, changeLabel: 'Similar', coverage: 0 };
+  }
+
+  async function computeCompareGroups(filtered, groupByField) {
+    if (!Api.isConfigured()) return {};
+    try {
+      const resp = await Api.analyticsCompare(filtered, groupByField);
+      return resp.groups || {};
+    } catch (e) {
+      console.warn('analyticsCompare failed for', groupByField, e);
+      return {};
+    }
+  }
+
   async function viewCompare() {
     await refreshData();
     const filtered = applyFilters(allSurveys);
-    const byType = Utils.groupBy(filtered, s => s.coffeeType);
-    const byProvince = Utils.groupBy(filtered, s => s.location?.province || 'Unknown');
-    const byIsland = Utils.groupBy(filtered, s => s.location?.island || 'Unknown');
 
-    function statsFor(list) {
-      const productionMt = Utils.productionMt(list);
-      const prevMt = Utils.previousProductionMt(list);
-      const areaHa = Utils.sum(list.map(s => s.farm?.farmAreaHa || 0));
-      const yieldKgHa = areaHa ? (productionMt * 1000 / areaHa) : 0;
-      const harvestPct = Utils.mean(list.map(s => s.harvestInfo?.harvestedPct ?? null)) || 0;
-      const changePct = Utils.pctChange(productionMt, prevMt);
-      return { productionMt, areaHa, yieldKgHa, harvestPct, changePct, coverage: list.length };
-    }
+    const [byTypeStats, byProvinceStats, byIslandStats] = await Promise.all([
+      computeCompareGroups(filtered, 'coffeeType'),
+      computeCompareGroups(filtered, 'location.province'),
+      computeCompareGroups(filtered, 'location.island'),
+    ]);
 
-    const rTotal = statsFor(byType['Robusta'] || []);
-    const aTotal = statsFor(byType['Arabica'] || []);
+    const rTotal = byTypeStats['Robusta'] || zeroGroupStats();
+    const aTotal = byTypeStats['Arabica'] || zeroGroupStats();
 
     rootEl().innerHTML = `
       ${filterBarHtml()}
@@ -355,7 +395,7 @@ const App = (() => {
           <tr><td>Area</td><td>${Utils.fmtNum(rTotal.areaHa,1)} ha</td><td>${Utils.fmtNum(aTotal.areaHa,1)} ha</td></tr>
           <tr><td>Yield</td><td>${Utils.fmtNum(rTotal.yieldKgHa,0)} kg/ha</td><td>${Utils.fmtNum(aTotal.yieldKgHa,0)} kg/ha</td></tr>
           <tr><td>Harvest Progress</td><td>${Utils.fmtNum(rTotal.harvestPct,0)}%</td><td>${Utils.fmtNum(aTotal.harvestPct,0)}%</td></tr>
-          <tr><td>Crop Change</td><td style="color:${Utils.outlookColor(Utils.outlookClass(rTotal.changePct))}">${Utils.fmtPct(rTotal.changePct)}</td><td style="color:${Utils.outlookColor(Utils.outlookClass(aTotal.changePct))}">${Utils.fmtPct(aTotal.changePct)}</td></tr>
+          <tr><td>Crop Change</td><td style="color:${Utils.outlookColor(rTotal.changeLabel)}">${Utils.fmtPct(rTotal.changePct)}</td><td style="color:${Utils.outlookColor(aTotal.changeLabel)}">${Utils.fmtPct(aTotal.changePct)}</td></tr>
           <tr><td>Survey Coverage</td><td>${rTotal.coverage}</td><td>${aTotal.coverage}</td></tr>
         </table>
       </div>
@@ -375,9 +415,8 @@ const App = (() => {
         <div class="table-wrap">
         <table class="cmp-table">
           <tr><th>Province</th><th>Prod MT</th><th>Area ha</th><th>Yield kg/ha</th><th>Harvest %</th><th>Change %</th><th>Coverage</th></tr>
-          ${Object.entries(byProvince).sort((a,b)=>statsFor(b[1]).productionMt - statsFor(a[1]).productionMt).map(([prov, list]) => {
-            const st = statsFor(list);
-            return `<tr><td>${prov}</td><td>${Utils.fmtNum(st.productionMt,1)}</td><td>${Utils.fmtNum(st.areaHa,1)}</td><td>${Utils.fmtNum(st.yieldKgHa,0)}</td><td>${Utils.fmtNum(st.harvestPct,0)}</td><td style="color:${Utils.outlookColor(Utils.outlookClass(st.changePct))}">${Utils.fmtPct(st.changePct)}</td><td>${st.coverage}</td></tr>`;
+          ${Object.entries(byProvinceStats).sort((a,b)=>b[1].productionMt - a[1].productionMt).map(([prov, st]) => {
+            return `<tr><td>${prov}</td><td>${Utils.fmtNum(st.productionMt,1)}</td><td>${Utils.fmtNum(st.areaHa,1)}</td><td>${Utils.fmtNum(st.yieldKgHa,0)}</td><td>${Utils.fmtNum(st.harvestPct,0)}</td><td style="color:${Utils.outlookColor(st.changeLabel)}">${Utils.fmtPct(st.changePct)}</td><td>${st.coverage}</td></tr>`;
           }).join('')}
         </table>
         </div>
@@ -385,39 +424,35 @@ const App = (() => {
     `;
     bindFilterBar(viewCompare);
 
-    const provNames = Object.keys(byProvince);
+    const provNames = Object.keys(byProvinceStats);
     Charts.barChart(document.getElementById('chart-province-cmp'), provNames.map(p=>p.slice(0,6)),
-      provNames.map(p => statsFor(byProvince[p]).productionMt), { fmt: v => Utils.fmtNum(v,0), color: '#6f4e37' });
+      provNames.map(p => byProvinceStats[p].productionMt), { fmt: v => Utils.fmtNum(v,0), color: '#6f4e37' });
 
-    const islandNames = Object.keys(byIsland);
+    const islandNames = Object.keys(byIslandStats);
     Charts.barChart(document.getElementById('chart-island-cmp'), islandNames.map(i=>i.slice(0,8)),
-      islandNames.map(i => statsFor(byIsland[i]).changePct || 0), { fmt: v => Utils.fmtPct(v), perBarColor: (v) => Utils.outlookColor(Utils.outlookClass(v)) });
+      islandNames.map(i => byIslandStats[i].changePct || 0), { fmt: v => Utils.fmtPct(v), perBarColor: (v, i) => Utils.outlookColor(islandNames[i] ? byIslandStats[islandNames[i]].changeLabel : 'Similar') });
   }
 
   // ===================== PRODUCTION FORECAST =====================
+  // NOTE: village->...->Indonesia rollup math (scale factor, initial/final
+  // estimate, diff %) is computed server-side by POST /api/analytics/forecast
+  // (see backend/services/analytics_service.py::forecast_rows).
+  async function computeForecast(filtered, adjustments) {
+    if (!Api.isConfigured()) return { rows: [], totalFinalMt: 0, totalInitialMt: 0 };
+    try {
+      return await Api.analyticsForecast(filtered, refMeta.provinceRef || [], adjustments);
+    } catch (e) {
+      console.warn('analyticsForecast failed:', e);
+      return { rows: [], totalFinalMt: 0, totalInitialMt: 0 };
+    }
+  }
+
   async function viewForecast() {
     await refreshData();
     const filtered = applyFilters(allSurveys);
     const adjustments = await DB.getAll('adjustments');
 
-    const byProvince = Utils.groupBy(filtered, s => s.location?.province || 'Unknown');
-    const rows = Object.entries(byProvince).map(([prov, list]) => {
-      const surveyEstMt = Utils.productionMt(list);
-      const provRef = (refMeta.provinceRef || []).find(p => p.province === prov);
-      const plantedHa = provRef ? (provRef.plantedAreaHaRobusta + provRef.plantedAreaHaArabica) : Utils.sum(list.map(s=>s.farm?.farmAreaHa||0));
-      const surveyedHa = Utils.sum(list.map(s => s.farm?.farmAreaHa || 0));
-      const scaleFactor = surveyedHa > 0 ? plantedHa / surveyedHa : 1;
-      const initialEstMt = surveyEstMt * scaleFactor * 0.9; // placeholder "initial" baseline (pre-survey estimate)
-      const adj = adjustments.filter(a => a.province === prov).sort((a,b)=>b.ts.localeCompare(a.ts))[0];
-      const adjPct = adj ? adj.adjustmentPct : 0;
-      const finalEstMt = surveyEstMt * scaleFactor * (1 + adjPct / 100);
-      const diffMt = finalEstMt - initialEstMt;
-      const diffPct = initialEstMt ? (diffMt / initialEstMt) * 100 : 0;
-      return { prov, initialEstMt, surveyEstMt: surveyEstMt * scaleFactor, adjPct, finalEstMt, diffMt, diffPct };
-    }).sort((a,b) => b.finalEstMt - a.finalEstMt);
-
-    const totalFinal = Utils.sum(rows.map(r => r.finalEstMt));
-    const totalInitial = Utils.sum(rows.map(r => r.initialEstMt));
+    const { rows, totalFinalMt: totalFinal, totalInitialMt: totalInitial } = await computeForecast(filtered, adjustments);
 
     rootEl().innerHTML = `
       ${filterBarHtml()}
@@ -432,14 +467,14 @@ const App = (() => {
         <table class="cmp-table">
           <tr><th>Province</th><th>Initial Est. MT</th><th>Survey-based MT</th><th>Mgmt Adj %</th><th>Final Est. MT</th><th>Diff MT</th><th>Diff %</th><th>Adjust</th></tr>
           ${rows.map(r => `<tr>
-            <td>${r.prov}</td>
+            <td>${r.province}</td>
             <td>${Utils.fmtNum(r.initialEstMt,0)}</td>
             <td>${Utils.fmtNum(r.surveyEstMt,0)}</td>
             <td>${Utils.fmtNum(r.adjPct,1)}%</td>
             <td><b>${Utils.fmtNum(r.finalEstMt,0)}</b></td>
             <td style="color:${r.diffMt>=0?'#1a7f37':'#d32f2f'}">${Utils.fmtNum(r.diffMt,0)}</td>
             <td style="color:${r.diffMt>=0?'#1a7f37':'#d32f2f'}">${Utils.fmtPct(r.diffPct)}</td>
-            <td>${Auth.can('adjustEstimate') ? `<button class="btn-chip btn-adjust" data-prov="${r.prov}">Adjust</button>` : '—'}</td>
+            <td>${Auth.can('adjustEstimate') ? `<button class="btn-chip btn-adjust" data-prov="${r.province}">Adjust</button>` : '—'}</td>
           </tr>`).join('')}
         </table>
         </div>
@@ -475,24 +510,34 @@ const App = (() => {
   // ===================== MANAGEMENT DASHBOARD =====================
   const MAJOR_PROVINCES = ['Lampung','South Sumatra','Bengkulu','Jambi','Aceh','North Sumatra','East Java','Central Java','West Java','Bali','West Nusa Tenggara','East Nusa Tenggara','South Sulawesi'];
 
+  // NOTE: management-dashboard aggregate stats (totals, YoY %, condition
+  // avg) and major-producing-region rows are computed server-side by
+  // POST /api/analytics/dashboard-stats (see
+  // backend/services/analytics_service.py::dashboard_stats /
+  // major_regions_stats).
+  async function computeDashboardStats(filtered) {
+    if (!Api.isConfigured()) {
+      return {
+        stats: { totalMt: 0, robustaMt: 0, arabicaMt: 0, yoyPct: null, yoyLabel: 'Similar', harvestPct: 0, conditionAvg: 0, secondCropMt: 0 },
+        major_regions: MAJOR_PROVINCES.map(p => ({ province: p, mt: 0, changePct: null, changeLabel: 'Similar', coverage: 0 })),
+      };
+    }
+    try {
+      return await Api.analyticsDashboardStats(filtered, MAJOR_PROVINCES);
+    } catch (e) {
+      console.warn('analyticsDashboardStats failed:', e);
+      return {
+        stats: { totalMt: 0, robustaMt: 0, arabicaMt: 0, yoyPct: null, yoyLabel: 'Similar', harvestPct: 0, conditionAvg: 0, secondCropMt: 0 },
+        major_regions: MAJOR_PROVINCES.map(p => ({ province: p, mt: 0, changePct: null, changeLabel: 'Similar', coverage: 0 })),
+      };
+    }
+  }
+
   async function viewManagement() {
     await refreshData();
     const filtered = applyFilters(allSurveys);
-    const totalMt = Utils.productionMt(filtered);
-    const robustaMt = Utils.productionMt(filtered.filter(s=>s.coffeeType==='Robusta'));
-    const arabicaMt = Utils.productionMt(filtered.filter(s=>s.coffeeType==='Arabica'));
-    const yoyPct = Utils.pctChange(totalMt, Utils.previousProductionMt(filtered));
-    const harvestPct = Utils.mean(filtered.map(s=>s.harvestInfo?.harvestedPct ?? null)) || 0;
-    const conditionAvg = Utils.mean(filtered.map(s=>s.cropCondition?.overallCondition ?? null)) || 0;
-    const secondCropMt = Utils.sum(filtered.map(s=>s.cropEstimate?.expectedSecondCropKg||0))/1000;
-
-    const byProvince = Utils.groupBy(filtered, s => s.location?.province || 'Unknown');
-    const majorRows = MAJOR_PROVINCES.map(p => {
-      const list = byProvince[p] || [];
-      const mt = Utils.productionMt(list);
-      const chg = Utils.pctChange(mt, Utils.previousProductionMt(list));
-      return { p, mt, chg, coverage: list.length };
-    });
+    const { stats, major_regions: majorRows } = await computeDashboardStats(filtered);
+    const { totalMt, robustaMt, arabicaMt, yoyPct, yoyLabel, harvestPct, conditionAvg, secondCropMt } = stats;
 
     rootEl().innerHTML = `
       ${filterBarHtml()}
@@ -500,7 +545,7 @@ const App = (() => {
         <div class="kpi-card"><div class="kpi-label">Indonesia Crop Estimate</div><div class="kpi-value">${Utils.fmtNum(totalMt,0)} MT</div></div>
         <div class="kpi-card"><div class="kpi-label">Robusta Estimate</div><div class="kpi-value">${Utils.fmtNum(robustaMt,0)} MT</div></div>
         <div class="kpi-card"><div class="kpi-label">Arabica Estimate</div><div class="kpi-value">${Utils.fmtNum(arabicaMt,0)} MT</div></div>
-        <div class="kpi-card"><div class="kpi-label">Crop Change YoY</div><div class="kpi-value" style="color:${Utils.outlookColor(Utils.outlookClass(yoyPct))}">${Utils.fmtPct(yoyPct)}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Crop Change YoY</div><div class="kpi-value" style="color:${Utils.outlookColor(yoyLabel)}">${Utils.fmtPct(yoyPct)}</div></div>
         <div class="kpi-card"><div class="kpi-label">Harvest Progress</div><div class="kpi-value">${Utils.fmtNum(harvestPct,0)}%</div></div>
         <div class="kpi-card"><div class="kpi-label">2nd Crop Potential</div><div class="kpi-value">${Utils.fmtNum(secondCropMt,0)} MT</div></div>
       </div>
@@ -515,7 +560,7 @@ const App = (() => {
         <div class="table-wrap">
         <table class="cmp-table">
           <tr><th>Region</th><th>Production MT</th><th>YoY Change</th><th>Coverage</th></tr>
-          ${majorRows.map(r => `<tr><td>${r.p}</td><td>${Utils.fmtNum(r.mt,0)}</td><td style="color:${Utils.outlookColor(Utils.outlookClass(r.chg))}">${Utils.fmtPct(r.chg)}</td><td>${r.coverage}</td></tr>`).join('')}
+          ${majorRows.map(r => `<tr><td>${r.province}</td><td>${Utils.fmtNum(r.mt,0)}</td><td style="color:${Utils.outlookColor(r.changeLabel)}">${Utils.fmtPct(r.changePct)}</td><td>${r.coverage}</td></tr>`).join('')}
         </table>
         </div>
       </div>
@@ -534,28 +579,30 @@ const App = (() => {
     `;
     bindFilterBar(viewManagement);
 
-    Charts.barChart(document.getElementById('mgmt-province-chart'), majorRows.map(r=>r.p.slice(0,6)), majorRows.map(r=>r.mt), { fmt: v=>Utils.fmtNum(v,0), color: '#6f4e37' });
+    Charts.barChart(document.getElementById('mgmt-province-chart'), majorRows.map(r=>r.province.slice(0,6)), majorRows.map(r=>r.mt), { fmt: v=>Utils.fmtNum(v,0), color: '#6f4e37' });
     Charts.gauge(document.getElementById('mgmt-gauge-condition'), (conditionAvg/5)*100, { color: '#4caf50' });
     const points = filtered.filter(s=>s.location?.lat && s.location?.lon).map(s=>({lat:s.location.lat, lon:s.location.lon, coffeeType:s.coffeeType, status:s.status}));
     MapView.render(document.getElementById('mgmt-map'), points, (pt)=> toast(`${pt.coffeeType} · ${pt.status}`));
   }
 
   // ===================== CROP TOUR REPORT =====================
-  function narrativeFor(scopeName, list) {
-    if (!list.length) return `No survey data available for ${scopeName} yet.`;
-    const mt = Utils.productionMt(list);
-    const prevMt = Utils.previousProductionMt(list);
-    const chg = Utils.pctChange(mt, prevMt);
-    const outlook = Utils.outlookClass(chg).toLowerCase();
-    const harvestPct = Math.round(Utils.mean(list.map(s=>s.harvestInfo?.harvestedPct ?? null)) || 0);
-    const conditionAvg = Utils.mean(list.map(s=>s.cropCondition?.overallCondition ?? null)) || 3;
-    const conditionDesc = conditionAvg >= 4 ? 'favorable' : conditionAvg >= 3 ? 'generally favorable' : conditionAvg >= 2 ? 'mixed' : 'below-average';
-    const peaks = list.map(s=>s.harvestInfo?.estPeakHarvest).filter(Boolean);
-    const commonPeak = peaks.length ? peaks[0] : 'to be confirmed';
-    const cherryLoadAvg = Utils.mean(list.map(s=>s.cropCondition?.cherryLoad ?? null)) || 3;
-    const loadDesc = cherryLoadAvg >= 4 ? 'good fruit load' : cherryLoadAvg >= 3 ? 'moderate fruit load' : 'below-average fruit load';
-
-    return `Crop conditions across ${scopeName} remain ${conditionDesc}. The region is showing a ${outlook} crop compared with last season (${Utils.fmtPct(chg)}), supported by ${loadDesc} and cherry development consistent with typical seasonal progression. Harvest progress has reached approximately ${harvestPct}%, while field observations indicate peak harvesting around ${commonPeak}. Total survey-based production estimate stands at ${Utils.fmtNum(mt,0)} MT across ${list.length} field observations.`;
+  // NOTE: the narrative paragraph (production estimate, harvest %, outlook
+  // wording, peak-harvest mention, fruit-load description) is generated
+  // server-side by POST /api/analytics/narrative (see
+  // backend/services/analytics_service.py::narrative_for) so every client
+  // renders identical report text from identical calculations.
+  async function narrativeFor(scopeName, list) {
+    if (!Api.isConfigured()) {
+      return list.length ? `Report narrative unavailable (no central server configured) for ${scopeName}.`
+                          : `No survey data available for ${scopeName} yet.`;
+    }
+    try {
+      const resp = await Api.analyticsNarrative(scopeName, list);
+      return resp.narrative;
+    } catch (e) {
+      console.warn('analyticsNarrative failed for', scopeName, e);
+      return `Report narrative unavailable for ${scopeName} (server error).`;
+    }
   }
 
   async function viewReport() {
@@ -566,27 +613,35 @@ const App = (() => {
     const robusta = filtered.filter(s=>s.coffeeType==='Robusta');
     const arabica = filtered.filter(s=>s.coffeeType==='Arabica');
 
+    const [nationalNarrative, robustaNarrative, arabicaNarrative, islandNarratives, provinceNarratives] = await Promise.all([
+      narrativeFor('Indonesia', filtered),
+      narrativeFor('Robusta-growing regions', robusta),
+      narrativeFor('Arabica-growing regions', arabica),
+      Promise.all(Object.entries(byIsland).map(async ([isl, list]) => [isl, await narrativeFor(isl, list)])),
+      Promise.all(Object.entries(byProvince).map(async ([prov, list]) => [prov, list.length, await narrativeFor(prov, list)])),
+    ]);
+
     rootEl().innerHTML = `
       ${filterBarHtml()}
       <div class="card">
         <div class="card-title">Indonesia — National Summary</div>
-        <p>${narrativeFor('Indonesia', filtered)}</p>
+        <p>${nationalNarrative}</p>
       </div>
       <div class="card">
         <div class="card-title">Robusta Outlook</div>
-        <p>${narrativeFor('Robusta-growing regions', robusta)}</p>
+        <p>${robustaNarrative}</p>
       </div>
       <div class="card">
         <div class="card-title">Arabica Outlook</div>
-        <p>${narrativeFor('Arabica-growing regions', arabica)}</p>
+        <p>${arabicaNarrative}</p>
       </div>
       <div class="card">
         <div class="card-title">By Island</div>
-        ${Object.entries(byIsland).map(([isl, list]) => `<p><b>${isl}:</b> ${narrativeFor(isl, list)}</p>`).join('')}
+        ${islandNarratives.map(([isl, text]) => `<p><b>${isl}:</b> ${text}</p>`).join('')}
       </div>
       <div class="card">
         <div class="card-title">By Province</div>
-        ${Object.entries(byProvince).map(([prov, list]) => `<details><summary><b>${prov}</b> (${list.length} surveys)</summary><p>${narrativeFor(prov, list)}</p></details>`).join('')}
+        ${provinceNarratives.map(([prov, count, text]) => `<details><summary><b>${prov}</b> (${count} surveys)</summary><p>${text}</p></details>`).join('')}
       </div>
       <div class="card">
         <button id="btn-export-report-pdf" class="btn-primary" style="width:100%">📄 Export Report (Print/PDF)</button>
@@ -595,6 +650,8 @@ const App = (() => {
     bindFilterBar(viewReport);
     document.getElementById('btn-export-report-pdf').addEventListener('click', () => window.print());
   }
+
+
 
   // ===================== DATA EXPORT =====================
   async function viewExport() {
@@ -605,7 +662,6 @@ const App = (() => {
       <div class="card">
         <div class="card-title">Export Filtered Data (${filtered.length} surveys)</div>
         <div class="export-btn-row" style="flex-direction:column">
-          <button id="exp-qn-xlsx" class="btn-secondary">📗 Export Official Questionnaire (Excel .xlsx)</button>
           <button id="exp-excel-csv" class="btn-secondary">📊 Export Raw Data (CSV for Excel)</button>
           <button id="exp-summary-csv" class="btn-secondary">📈 Export Crop Estimate Summary (CSV)</button>
           <button id="exp-geojson2" class="btn-secondary">🗺️ Export GeoJSON</button>
@@ -615,26 +671,22 @@ const App = (() => {
       </div>
     `;
     bindFilterBar(viewExport);
-    document.getElementById('exp-qn-xlsx').addEventListener('click', () => {
-      try {
-        Utils.downloadXLSX(filtered, 'crop_tour_questionnaire.xlsx');
-      } catch (e) {
-        App.toast('Excel export failed: ' + e.message, 'error');
-      }
-    });
     document.getElementById('exp-excel-csv').addEventListener('click', () => Utils.downloadBlob(Utils.toCSV(Utils.surveysToFlatRows(filtered)), 'crop_tour_raw_data.csv', 'text/csv'));
-    document.getElementById('exp-summary-csv').addEventListener('click', () => {
-      const byProvince = Utils.groupBy(filtered, s => s.location?.province || 'Unknown');
-      const rows = Object.entries(byProvince).map(([prov, list]) => ({
-        Province: prov, Surveys: list.length,
-        ProductionMT: Math.round(Utils.productionMt(list)*10)/10,
-        PreviousMT: Math.round(Utils.previousProductionMt(list)*10)/10,
-        ChangePct: Math.round((Utils.pctChange(Utils.productionMt(list), Utils.previousProductionMt(list))||0)*10)/10,
-        AreaHa: Math.round(Utils.sum(list.map(s=>s.farm?.farmAreaHa||0))*10)/10,
-        AvgHarvestPct: Math.round(Utils.mean(list.map(s=>s.harvestInfo?.harvestedPct??null))||0),
+    // NOTE: per-province summary stats (production MT, change %, area,
+    // avg harvest %) are computed server-side by POST /api/analytics/compare
+    // (see backend/services/analytics_service.py::compare_by_field).
+    document.getElementById('exp-summary-csv').addEventListener('click', async () => {
+      const groups = await computeCompareGroups(filtered, 'location.province');
+      const rows = Object.entries(groups).map(([prov, st]) => ({
+        Province: prov, Surveys: st.coverage,
+        ProductionMT: Math.round(st.productionMt*10)/10,
+        ChangePct: Math.round((st.changePct||0)*10)/10,
+        AreaHa: Math.round(st.areaHa*10)/10,
+        AvgHarvestPct: Math.round(st.harvestPct||0),
       }));
       Utils.downloadBlob(Utils.toCSV(rows), 'crop_tour_summary.csv', 'text/csv');
     });
+
     document.getElementById('exp-geojson2').addEventListener('click', () => Utils.downloadBlob(JSON.stringify(Utils.toGeoJSON(filtered), null, 2), 'crop_tour.geojson', 'application/geo+json'));
     document.getElementById('exp-kml2').addEventListener('click', () => Utils.downloadBlob(Utils.toKML(filtered), 'crop_tour.kml', 'application/vnd.google-earth.kml+xml'));
     document.getElementById('exp-pdf').addEventListener('click', () => window.print());
@@ -698,8 +750,10 @@ const App = (() => {
     { path: '#/management', label: 'Management', icon: '🧭', view: viewManagement },
     { path: '#/report', label: 'Report', icon: '📝', view: viewReport },
     { path: '#/export', label: 'Export', icon: '⬇️', view: viewExport },
+    { path: '#/sync-center', label: 'Sync Center', icon: '🗂️', view: () => SyncCenter.render(rootEl(), { toast, navigate }) },
     { path: '#/admin', label: 'Admin', icon: '⚙️', view: viewAdmin, roleNeeded: 'manageUsers' },
   ];
+
 
   function bottomNavHtml() {
     const primary = ['#/home', '#/surveys', '#/new-survey', '#/map', '#/more'];
@@ -726,7 +780,7 @@ const App = (() => {
     <div class="card">
       <div class="card-title">Central Server (Administrator)</div>
       <div class="muted small" style="margin-bottom:8px">
-        ${Api.isConfigured() ? `Connected to: <b>${localStorage.getItem('cct_api_base_url')}</b>` : 'No central server configured -- app is running in local-only mode.'}
+        ${Api.isConfigured() ? `Connected to: <b>${LocalStore.getItem('cct_api_base_url')}</b>` : 'No central server configured -- app is running in local-only mode.'}
       </div>
       <button class="btn-secondary" id="btn-configure-server" style="width:100%">⚙️ Configure Server URL</button>
     </div>` : ''}`;
@@ -758,7 +812,7 @@ const App = (() => {
       if (switchUserBtn) switchUserBtn.addEventListener('click', () => { Auth.logout(); renderLogin(true); });
       const configureServerBtn = document.getElementById('btn-configure-server');
       if (configureServerBtn) configureServerBtn.addEventListener('click', async () => {
-        const current = localStorage.getItem('cct_api_base_url') || '';
+        const current = LocalStore.getItem('cct_api_base_url') || '';
         const url = prompt('Enter the FastAPI backend URL (e.g. https://api.yourcompany.com), or leave blank to disable and use local-only mode:', current);
         if (url === null) return;
         Api.setBaseUrl(url.trim().replace(/\/$/, ''));
@@ -858,6 +912,7 @@ const App = (() => {
 
   async function init() {
     await DB.open();
+    await LocalStore.init(); // Step "Replace Local Storage" -- hydrate + one-time legacy migration
     await DB.ensureSeeded();
     Sync.init();
     Sync.onChange(() => updateHeader());

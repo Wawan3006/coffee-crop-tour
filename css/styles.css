@@ -103,13 +103,31 @@ button { font-family: inherit; }
 .status-draft { background: #eee; color: #666; }
 .status-sync_error { background: #fdecea; color: #c62828; }
 .status-syncing { background: #e3f2fd; color: #1565c0; }
+.status-conflict { background: #f3e5f5; color: #6a1b9a; }
 
 .badge { padding: 6px 12px; border-radius: 10px; font-size: 0.78rem; font-weight: 600; }
 .badge-draft { background: #eee; color: #666; }
 .badge-waiting { background: #fff3e0; color: #e65100; }
 .badge-error { background: #fdecea; color: #c62828; }
 .badge-synced { background: #e0f2e1; color: #1a7f37; }
+.badge-conflict { background: #f3e5f5; color: #6a1b9a; }
 .sync-status-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- Sync Center ---------- */
+.sync-center-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 10px; }
+.sync-center-tab { flex: 0 0 auto; border: 1px solid var(--border); background: #fff; border-radius: 20px; padding: 8px 14px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+.sync-center-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.queue-row { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+.queue-row-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.queue-row-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.queue-row-actions button { flex: 0 0 auto; font-size: 0.78rem; padding: 6px 10px; }
+.dup-warning { background: #fff8e1; color: #8a6d00; border-radius: 8px; padding: 6px 10px; font-size: 0.78rem; margin-top: 6px; }
+.conflict-box { background: #f3e5f5; border-radius: 8px; padding: 8px 10px; font-size: 0.8rem; margin-top: 6px; color: #4a148c; }
+.history-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+.history-row:last-child { border-bottom: none; }
+.bg-sync-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+.bg-sync-pill.on { background: #e0f2e1; color: #1a7f37; }
+.bg-sync-pill.off { background: #eee; color: #666; }
 
 /* ---------- Lists ---------- */
 .list-row {

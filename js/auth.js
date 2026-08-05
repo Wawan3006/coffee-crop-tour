@@ -1,5 +1,7 @@
 // ============================================================================
-// auth.js — simple role-based auth (demo). Session persisted in localStorage.
+// auth.js — simple role-based auth (demo). Session persisted via LocalStore
+// (js/local-store.js -- IndexedDB-backed, replaces window.localStorage; see
+// Step "Replace Local Storage").
 // Roles: Field Surveyor, Agronomist, Manager, Administrator
 // ============================================================================
 
@@ -10,7 +12,7 @@ const Auth = (() => {
     return DB.get('users', username).then(user => {
       if (!user || user.password !== password) throw new Error('Invalid username or password');
       const session = { username: user.username, name: user.name, role: user.role, loginAt: Utils.nowIso() };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      LocalStore.setItem(SESSION_KEY, JSON.stringify(session));
       DB.logAudit(session, 'LOGIN', 'session', user.username);
       return session;
     });
@@ -19,12 +21,12 @@ const Auth = (() => {
   function logout() {
     const s = currentUser();
     if (s) DB.logAudit(s, 'LOGOUT', 'session', s.username);
-    localStorage.removeItem(SESSION_KEY);
+    LocalStore.removeItem(SESSION_KEY);
   }
 
   function currentUser() {
     try {
-      const raw = localStorage.getItem(SESSION_KEY);
+      const raw = LocalStore.getItem(SESSION_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch (e) { return null; }
   }

@@ -1,12 +1,22 @@
 // ============================================================================
 // db.js — IndexedDB wrapper (offline-first local storage layer)
-// Stores: surveys (synced), drafts (draft/waiting_sync/sync_error), photos,
-//         adjustments (crop estimate revision history), auditLog, users, meta
+// Stores: surveys (synced), drafts (draft/waiting_sync/syncing/synced/
+//         sync_error/conflict), photos, adjustments (crop estimate revision
+//         history), auditLog, users, meta, localStore (key/value replacement
+//         for localStorage -- see js/local-store.js), syncHistory (Sync
+//         History feature -- one row per sync run, success or failure).
+//
+// DB_VERSION 2 (Step: "Replace Local Storage" + Sync History): adds the
+// `localStore` and `syncHistory` object stores. onupgradeneeded only CREATES
+// stores that don't already exist, so upgrading from version 1 -> 2 on a
+// device that already has real survey data is non-destructive -- every
+// existing store (surveys, drafts, photos, adjustments, auditLog, users,
+// meta) is left completely untouched.
 // ============================================================================
 
 const DB = (() => {
   const DB_NAME = 'CoffeeCropTourDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   let _db = null;
 
   function open() {
@@ -22,6 +32,12 @@ const DB = (() => {
         if (!db.objectStoreNames.contains('auditLog')) db.createObjectStore('auditLog', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'username' });
         if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+        // ---- New in DB_VERSION 2 ----
+        if (!db.objectStoreNames.contains('localStore')) db.createObjectStore('localStore', { keyPath: 'key' });
+        if (!db.objectStoreNames.contains('syncHistory')) {
+          const sh = db.createObjectStore('syncHistory', { keyPath: 'id' });
+          sh.createIndex('by_ts', 'ts', { unique: false });
+        }
       };
       req.onsuccess = (e) => { _db = e.target.result; resolve(_db); };
       req.onerror = (e) => reject(e.target.error);
@@ -140,8 +156,24 @@ const DB = (() => {
     return synced.concat(drafts);
   }
 
+  // ---- localStore: key/value replacement for window.localStorage. See
+  // js/local-store.js for the synchronous in-memory-cache wrapper that reads/
+  // writes through this store. ----
+  async function getAllLocalStore() { return getAll('localStore'); }
+  async function putLocalStore(key, value) { return put('localStore', { key, value }); }
+  async function deleteLocalStore(key) { return del('localStore', key); }
+
+  // ---- syncHistory: one row per sync run (Sync History feature). ----
+  async function addSyncHistory(entry) { return put('syncHistory', entry); }
+  async function getSyncHistory(limit = 50) {
+    const rows = await getAll('syncHistory');
+    return rows.sort((a, b) => (b.ts || '').localeCompare(a.ts || '')).slice(0, limit);
+  }
+
   return {
     open, put, bulkPut, get, getAll, del, clear, count,
     ensureSeeded, getMeta, setMeta, logAudit, getAllSurveysCombined,
+    getAllLocalStore, putLocalStore, deleteLocalStore,
+    addSyncHistory, getSyncHistory,
   };
 })();
